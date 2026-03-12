@@ -266,3 +266,32 @@
 .dropZoneActive .dropZoneText {
   color: var(--white);
 }
+
+/* ─── Tamaño de grilla ───────────────────────────────────────────────────────── */
+.gridOptions {
+  display: flex;
+  gap: 6px;
+}
+
+.gridBtn {
+  flex: 1;
+  padding: 9px 4px;
+  border: 1px solid #333;
+  background: var(--surface2);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.gridBtn:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.gridBtn.active {
+  background: var(--yellow);
+  color: var(--black);
+  border-color: var(--yellow);
+}

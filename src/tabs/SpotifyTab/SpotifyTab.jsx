@@ -35,9 +35,6 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
   const [saveForm, setSaveForm] = useState(false)
   const [saveName, setSaveName] = useState('')
 
-  // Guest: IDs ocultos de la vista (solo local, no borra de DB)
-  const [hiddenGuestIds, setHiddenGuestIds] = useState([])
-
   // Nombre e ID de la entrada seleccionada (para poder actualizar en DB al guardar cambios)
   const [selectedEntryName, setSelectedEntryName] = useState(null)
   const [selectedEntryId, setSelectedEntryId] = useState(null)
@@ -157,19 +154,19 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
     }
   }
 
-  // Eliminar lista de Supabase (solo Spotify mode)
+  // Eliminar lista de Supabase
   async function handleDelete(id) {
     try {
       const updated = await useSP.remove(id)
       setSavedPlaylists(updated)
+      if (id === selectedEntryId) {
+        setSelectedEntryId(null)
+        setSelectedEntryName(null)
+        resetPlaylist()
+      }
     } catch {
       setError('Error al eliminar la lista.')
     }
-  }
-
-  // Ocultar lista de la vista (solo Guest mode, no borra de DB)
-  function handleGuestHide(id) {
-    setHiddenGuestIds((prev) => [...prev, id])
   }
 
   function handleLoadSaved(entry) {
@@ -240,6 +237,15 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
     }
   }
 
+  // Renombrar la lista activa en modo invitado desde la card editable
+  async function handleGuestRename() {
+    if (!selectedEntryId || !selectedEntryName?.trim()) return
+    try {
+      const updated = await useSP.rename(selectedEntryId, selectedEntryName)
+      setSavedPlaylists(updated)
+    } catch { /* silencioso */ }
+  }
+
   function formatDate(iso) {
     const d = new Date(iso)
     return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })
@@ -270,94 +276,15 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
 
   // ── Pantalla 2: Modo Invitado ──────────────────────────────────────────────
   if (guestMode && !token) {
-    const guestList = savedPlaylists.filter((e) => !hiddenGuestIds.includes(e.id))
-
     const guestLeft = (
       <>
         <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
+        {/* Header */}
         <div className={styles.guestHeader}>
-          <h2 className={styles.sectionTitle}>Elegí una lista</h2>
-          <button
-            className={styles.disconnectBtn}
-            onClick={() => { setGuestMode(false); resetPlaylist(); setSelectedEntryId(null); setSelectedEntryName(null) }}
-          >
-            ← Volver
-          </button>
-        </div>
-
-        {!playlist && (
-          <p className={styles.guestSubtitle}>
-            Seleccioná una lista para jugar. Podés ocultar las que no te interesan.
-          </p>
-        )}
-
-        {guestList.length === 0 ? (
-          <p className={styles.emptyLists}>
-            No hay listas disponibles. Importá un archivo JSON para empezar.
-          </p>
-        ) : (
-          <div className={styles.guestList}>
-            {guestList.map((entry) => (
-              <div
-                key={entry.id}
-                className={`${styles.guestListItem} ${
-                  playlist?.id === entry.playlist?.id ? styles.guestListItemSelected : ''
-                }`}
-                onClick={() => !renamingId && handleLoadSaved(entry)}
-              >
-                {entry.playlist?.imageUrl && (
-                  <img
-                    src={entry.playlist.imageUrl}
-                    alt=""
-                    className={styles.guestListThumb}
-                  />
-                )}
-                {renamingId === entry.id ? (
-                  <input
-                    className={styles.renameInput}
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleRename(entry.id)
-                      if (e.key === 'Escape') setRenamingId(null)
-                    }}
-                    onBlur={() => handleRename(entry.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    autoFocus
-                  />
-                ) : (
-                  <div className={styles.guestListInfo}>
-                    <span className={styles.guestListName}>{entry.name}</span>
-                    <span className={styles.guestListMeta}>{entry.tracks.length} canciones</span>
-                  </div>
-                )}
-                {renamingId !== entry.id && (
-                  <button
-                    className={styles.renameBtn}
-                    onClick={(e) => { e.stopPropagation(); setRenamingId(entry.id); setRenameValue(entry.name) }}
-                    title="Renombrar"
-                  >✏</button>
-                )}
-                <button
-                  className={styles.guestHideBtn}
-                  onClick={(e) => { e.stopPropagation(); handleGuestHide(entry.id) }}
-                  title="Ocultar de mi vista"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Importar JSON */}
-        <div className={styles.savedActions}>
-          <button
-            className={styles.jsonBtn}
-            onClick={() => importInputRef.current?.click()}
-          >
-            ↑ Importar listas
+          <h2 className={styles.sectionTitle}>Elegí la lista</h2>
+          <button className={styles.jsonBtn} onClick={() => importInputRef.current?.click()}>
+            ↑ Importar lista
           </button>
           <input
             ref={importInputRef}
@@ -368,57 +295,107 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
           />
         </div>
 
-        {/* Card de confirmación — aparece cuando hay playlist seleccionada */}
-        {playlist && (
-          <div className={styles.guestSelectedCard}>
-            {playlist.imageUrl && (
-              <img src={playlist.imageUrl} alt="" className={styles.guestSelectedThumb} />
-            )}
-            <div>
-              <div className={styles.guestSelectedName}>
-                {selectedEntryName ?? playlist.name}
+        {/* Dropdown */}
+        <div className={styles.guestSelectWrapper}>
+          <select
+            className={styles.guestSelect}
+            value={selectedEntryId ?? ''}
+            onChange={(e) => {
+              const found = savedPlaylists.find((p) => p.id === e.target.value)
+              if (found) handleLoadSaved(found)
+              else { resetPlaylist(); setSelectedEntryId(null); setSelectedEntryName(null) }
+            }}
+          >
+            <option value="">Seleccionar lista...</option>
+            {savedPlaylists.map((entry) => (
+              <option key={entry.id} value={entry.id}>{entry.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Card + acciones — solo cuando hay selección */}
+        {playlist && selectedEntryId && (
+          <>
+            {/* Selected card con nombre editable */}
+            <div className={styles.selectedCard}>
+              {playlist.imageUrl && (
+                <img src={playlist.imageUrl} alt="" className={styles.selectedCardThumb} />
+              )}
+              <div className={styles.selectedCardInfo}>
+                <input
+                  className={styles.selectedNameInput}
+                  value={selectedEntryName ?? ''}
+                  onChange={(e) => setSelectedEntryName(e.target.value)}
+                  onBlur={handleGuestRename}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleGuestRename() }}
+                />
+                <span className={styles.selectedCardMeta}>{tracks.length} canciones cargadas</span>
               </div>
-              <div className={styles.guestSelectedCount}>{tracks.length} canciones cargadas</div>
             </div>
-          </div>
+
+            {/* Botones de acción */}
+            <div className={styles.listActionBtns}>
+              <button
+                className={styles.saveTracksBtn}
+                onClick={handleSaveTracks}
+                disabled={!isDirty}
+              >
+                {trackSaved ? '✓ Guardado' : 'Guardar cambios'}
+              </button>
+              {!saveAsForm && (
+                <button
+                  className={styles.saveAsBtn}
+                  onClick={() => { setSaveAsForm(true); setSaveAsName(selectedEntryName ?? '') }}
+                >
+                  + Nueva lista
+                </button>
+              )}
+              <button
+                className={styles.deleteListBtn}
+                onClick={() => handleDelete(selectedEntryId)}
+              >
+                🗑 Eliminar lista
+              </button>
+            </div>
+
+            {/* Save As form inline */}
+            {saveAsForm && (
+              <div className={styles.saveAsRow}>
+                <input
+                  className={styles.saveAsInput}
+                  value={saveAsName}
+                  onChange={(e) => setSaveAsName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveAs()
+                    if (e.key === 'Escape') setSaveAsForm(false)
+                  }}
+                  placeholder="Nombre de la nueva lista"
+                  autoFocus
+                />
+                <button className={styles.saveConfirmBtn} onClick={handleSaveAs}>Guardar</button>
+                <button className={styles.saveCancelBtn} onClick={() => setSaveAsForm(false)}>✕</button>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Tamaño de grilla */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Tamaño de grilla</h2>
-          <div className={styles.gridOptions}>
-            {GRID_OPTIONS.map((opt) => (
-              <button
-                key={opt.label}
-                className={`${styles.gridBtn} ${
-                  gridSize.cols === opt.cols && gridSize.rows === opt.rows ? styles.active : ''
-                }`}
-                onClick={() => setGridSize({ cols: opt.cols, rows: opt.rows })}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          {notEnoughTracks && (
-            <ErrorBanner
-              message={`La playlist tiene ${draftTracks.length} canciones pero el cartón necesita ${requiredTracks}. Elegí una grilla más chica.`}
-            />
-          )}
-        </section>
-
-        <div className={styles.actions}>
-          {playlist && (
-            <button className={styles.reiniciarBtn} onClick={() => { resetPlaylist(); setSelectedEntryId(null); setSelectedEntryName(null) }}>
-              ✕ Reiniciar
-            </button>
-          )}
+        {/* Botones de navegación al fondo */}
+        <div className={styles.guestActions}>
           <button
             className={styles.goBtn}
             onClick={onGoToCalibrator}
-            disabled={!playlist || draftTracks.length < requiredTracks}
+            disabled={!playlist}
           >
             Ir al Calibrador →
           </button>
+          {playlist && (
+            <button
+              className={styles.reiniciarBtn}
+              onClick={() => { resetPlaylist(); setSelectedEntryId(null); setSelectedEntryName(null) }}
+            >
+              ✕ Reiniciar
+            </button>
+          )}
         </div>
       </>
     )
@@ -429,50 +406,13 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
 
     return (
       <div className={styles.twoCol}>
-        <div className={styles.leftPanel}>
-          {guestLeft}
-        </div>
+        <div className={styles.leftPanel}>{guestLeft}</div>
 
-        {/* Panel derecho: editor de tracks */}
+        {/* Panel derecho: solo lista de tracks */}
         <div className={styles.rightPanel}>
           <div className={styles.trackEditorHeader}>
             <span>{draftTracks.length} canciones{isDirty ? ' · cambios sin guardar' : ''}</span>
-            <div className={styles.trackEditorBtns}>
-              {!saveAsForm && (
-                <button
-                  className={styles.saveAsBtn}
-                  onClick={() => { setSaveAsForm(true); setSaveAsName(playlist?.name ?? '') }}
-                  title="Guardar las canciones editadas como nueva lista"
-                >
-                  + Nueva lista
-                </button>
-              )}
-              <button
-                className={styles.saveTracksBtn}
-                onClick={handleSaveTracks}
-                disabled={!isDirty}
-              >
-                {trackSaved ? '✓ Guardado' : 'Guardar cambios'}
-              </button>
-            </div>
           </div>
-          {saveAsForm && (
-            <div className={styles.saveAsRow}>
-              <input
-                className={styles.saveAsInput}
-                value={saveAsName}
-                onChange={(e) => setSaveAsName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveAs()
-                  if (e.key === 'Escape') setSaveAsForm(false)
-                }}
-                placeholder="Nombre de la nueva lista"
-                autoFocus
-              />
-              <button className={styles.saveConfirmBtn} onClick={handleSaveAs}>Guardar</button>
-              <button className={styles.saveCancelBtn} onClick={() => setSaveAsForm(false)}>✕</button>
-            </div>
-          )}
           <div className={styles.trackList}>
             {draftTracks.map((track, i) => (
               <div key={track.id} className={styles.trackRow}>

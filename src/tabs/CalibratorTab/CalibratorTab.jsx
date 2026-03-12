@@ -7,8 +7,15 @@ import { ErrorBanner } from '../../components/UI/ErrorBanner'
 import { GridOverlay } from '../../components/GridOverlay/GridOverlay'
 import styles from './CalibratorTab.module.css'
 
+const GRID_OPTIONS = [
+  { label: '3×3', cols: 3, rows: 3 },
+  { label: '3×4', cols: 3, rows: 4 },
+  { label: '4×4', cols: 4, rows: 4 },
+  { label: '5×5', cols: 5, rows: 5 },
+]
+
 export function CalibratorTab({ onGoToCards }) {
-  const { state } = useAppContext()
+  const { state, setGridSize } = useAppContext()
   const { calibration, gridSize } = state
   const { handleImageUpload, updateParam, saveToLocalStorage, loadFromLocalStorage, reset } =
     useCalibrator()
@@ -250,6 +257,24 @@ export function CalibratorTab({ onGoToCards }) {
           <p className={styles.toggleHint}>
             Al 100% las celdas se ven igual que en el cartón final. Bajá la opacidad para ver la imagen de fondo al calibrar.
           </p>
+        </section>
+
+        {/* Tamaño de grilla */}
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>⊞ Tamaño de grilla</h3>
+          <div className={styles.gridOptions}>
+            {GRID_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                className={`${styles.gridBtn} ${
+                  gridSize.cols === opt.cols && gridSize.rows === opt.rows ? styles.active : ''
+                }`}
+                onClick={() => setGridSize({ cols: opt.cols, rows: opt.rows })}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </section>
 
         {/* Acciones */}

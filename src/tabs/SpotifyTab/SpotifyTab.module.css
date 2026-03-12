@@ -642,9 +642,9 @@
 .guestScreen {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   padding: 28px;
-  max-width: 680px;
+  max-width: 520px;
 }
 
 .guestHeader {
@@ -757,4 +757,143 @@
   font-size: 12px;
   color: var(--muted);
   margin-top: 2px;
+}
+
+/* ─── Guest Mode v2 ──────────────────────────────────────────────────────────── */
+
+.guestSelectWrapper {
+  position: relative;
+}
+
+.guestSelect {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--surface2);
+  border: 1px solid #333;
+  color: var(--white);
+  font-size: 14px;
+  font-family: var(--font-body);
+  appearance: none;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+
+.guestSelect:hover,
+.guestSelect:focus {
+  border-color: var(--yellow);
+  outline: none;
+}
+
+.selectedCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border-left: 3px solid var(--yellow);
+}
+
+.selectedCardThumb {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.selectedCardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.selectedNameInput {
+  background: none;
+  border: none;
+  border-bottom: 1px solid #444;
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-body);
+  width: 100%;
+  padding: 2px 0;
+  transition: border-color var(--transition);
+}
+
+.selectedNameInput:hover,
+.selectedNameInput:focus {
+  border-bottom-color: var(--yellow);
+  outline: none;
+}
+
+.selectedCardMeta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.listActionBtns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deleteListBtn {
+  padding: 7px 14px;
+  background: none;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.deleteListBtn:hover {
+  background: #c0392b;
+  color: var(--white);
+}
+
+.guestActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+/* ─── Responsive Mobile ───────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .twoCol {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .leftPanel {
+    flex: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #222;
+    overflow-y: visible;
+    padding: 20px 16px;
+  }
+
+  .rightPanel {
+    flex: none;
+    height: 60vh;
+  }
+
+  .guestScreen {
+    padding: 20px 16px;
+  }
+
+  .listActionBtns {
+    flex-direction: column;
+  }
+
+  .listActionBtns > button {
+    width: 100%;
+  }
 }
