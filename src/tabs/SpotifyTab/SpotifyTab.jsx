@@ -38,8 +38,9 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
   // Guest: IDs ocultos de la vista (solo local, no borra de DB)
   const [hiddenGuestIds, setHiddenGuestIds] = useState([])
 
-  // Nombre de la entrada seleccionada en modo invitado (nombre personalizado, no el de Spotify)
+  // Nombre e ID de la entrada seleccionada (para poder actualizar en DB al guardar cambios)
   const [selectedEntryName, setSelectedEntryName] = useState(null)
+  const [selectedEntryId, setSelectedEntryId] = useState(null)
 
   // Rename inline
   const [renamingId, setRenamingId] = useState(null)
@@ -71,6 +72,7 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
       setSaveAsForm(false)
       setRenamingId(null)
       setSelectedEntryName(null)
+      setSelectedEntryId(null)
     }
   }, [homeSignal])
 
@@ -174,6 +176,7 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
     setPlaylist(entry.playlist)
     setTracks(entry.tracks)
     setSelectedEntryName(entry.name)
+    setSelectedEntryId(entry.id)
   }
 
   async function handleImport(e) {
@@ -198,11 +201,20 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
     setIsDirty(true)
   }
 
-  function handleSaveTracks() {
+  async function handleSaveTracks() {
     setTracks(draftTracks)
     setIsDirty(false)
     setTrackSaved(true)
     setTimeout(() => setTrackSaved(false), 2000)
+    // Si hay una lista guardada seleccionada, persistir cambios en la DB
+    if (selectedEntryId) {
+      try {
+        const updated = await useSP.updateTracks(selectedEntryId, draftTracks)
+        setSavedPlaylists(updated)
+      } catch {
+        // El guardado local ya funcionó; el error de DB es silencioso
+      }
+    }
   }
 
   async function handleRename(id) {
@@ -268,7 +280,7 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
           <h2 className={styles.sectionTitle}>Elegí una lista</h2>
           <button
             className={styles.disconnectBtn}
-            onClick={() => { setGuestMode(false); resetPlaylist() }}
+            onClick={() => { setGuestMode(false); resetPlaylist(); setSelectedEntryId(null); setSelectedEntryName(null) }}
           >
             ← Volver
           </button>
@@ -396,7 +408,7 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
 
         <div className={styles.actions}>
           {playlist && (
-            <button className={styles.reiniciarBtn} onClick={resetPlaylist}>
+            <button className={styles.reiniciarBtn} onClick={() => { resetPlaylist(); setSelectedEntryId(null); setSelectedEntryName(null) }}>
               ✕ Reiniciar
             </button>
           )}
@@ -667,7 +679,7 @@ export function SpotifyTab({ onGoToCalibrator, homeSignal = 0 }) {
 
       <div className={styles.actions}>
         {playlist && (
-          <button className={styles.reiniciarBtn} onClick={resetPlaylist}>
+          <button className={styles.reiniciarBtn} onClick={() => { resetPlaylist(); setSelectedEntryId(null); setSelectedEntryName(null) }}>
             ✕ Reiniciar
           </button>
         )}

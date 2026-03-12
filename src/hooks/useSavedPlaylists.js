@@ -15,11 +15,11 @@ function getDeviceId() {
 export function useSavedPlaylists() {
   const deviceId = getDeviceId()
 
+  // Devuelve TODAS las listas (compartidas entre dispositivos)
   async function getAll() {
     const { data, error } = await supabase
       .from('playlists')
       .select('*')
-      .eq('device_id', deviceId)
       .order('saved_at', { ascending: true })
     if (error) throw error
     return data ?? []
@@ -28,7 +28,7 @@ export function useSavedPlaylists() {
   async function save(name, playlist, tracks) {
     const all = await getAll()
     if (all.length >= MAX) {
-      throw new Error(`Ya tenés ${MAX} listas guardadas. Eliminá alguna para liberar espacio.`)
+      throw new Error(`Ya hay ${MAX} listas guardadas. Eliminá alguna para liberar espacio.`)
     }
     const { error } = await supabase.from('playlists').insert({
       device_id: deviceId,
@@ -36,6 +36,16 @@ export function useSavedPlaylists() {
       playlist,
       tracks,
     })
+    if (error) throw error
+    return await getAll()
+  }
+
+  // Actualiza las canciones de una lista existente
+  async function updateTracks(id, tracks) {
+    const { error } = await supabase
+      .from('playlists')
+      .update({ tracks })
+      .eq('id', id)
     if (error) throw error
     return await getAll()
   }
@@ -79,8 +89,8 @@ export function useSavedPlaylists() {
     if (!Array.isArray(data)) throw new Error('Formato inválido')
     const limited = data.slice(0, MAX)
 
-    // Reemplazar todas las listas del dispositivo con las importadas
-    await supabase.from('playlists').delete().eq('device_id', deviceId)
+    // Reemplazar TODAS las listas del pool compartido con las importadas
+    await supabase.from('playlists').delete().not('id', 'is', null)
 
     const rows = limited.map((e) => ({
       device_id: deviceId,
@@ -93,5 +103,5 @@ export function useSavedPlaylists() {
     return await getAll()
   }
 
-  return { getAll, save, rename, remove, exportJSON, importJSON }
+  return { getAll, save, updateTracks, rename, remove, exportJSON, importJSON, deviceId }
 }
