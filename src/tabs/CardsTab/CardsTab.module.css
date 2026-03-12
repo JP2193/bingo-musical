@@ -153,3 +153,50 @@
   font-size: 13px;
   border: 1px dashed #333;
 }
+
+/* ─── Responsive Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Controles (botones) quedan PRIMERO (ya están primero en el DOM) */
+  .controls {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #1e1e1e;
+    overflow-y: visible;
+    padding: 16px;
+  }
+
+  /* Botones en grid 2×2 para ahorrar espacio vertical */
+  .btnGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .actionBtn {
+    border-right: 1px solid #222;
+    justify-content: center;
+    padding: 14px 8px;
+  }
+
+  /* El wrapper del lote ocupa las 2 columnas */
+  .loteBtnWrapper {
+    grid-column: 1 / -1;
+    border-top: none;
+  }
+
+  /* Cartón preview debajo */
+  .preview {
+    padding: 16px;
+    min-height: 50vh;
+    align-items: flex-start;
+  }
+
+  .noCard {
+    min-height: 200px;
+  }
+}

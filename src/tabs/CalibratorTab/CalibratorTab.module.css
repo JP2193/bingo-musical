@@ -267,6 +267,56 @@
   color: var(--white);
 }
 
+/* ─── Responsive Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Preview (imagen/dropzone) aparece PRIMERO */
+  .preview {
+    order: 1;
+    padding: 16px;
+    min-height: 260px;
+    /* Limitar altura para no ocupar toda la pantalla */
+    max-height: 50vh;
+    overflow: hidden;
+  }
+
+  .imageWrapper {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .saveAndContinueBtn {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  .previewImg {
+    max-height: calc(50vh - 80px);
+    width: 100%;
+    object-fit: contain;
+  }
+
+  .dropZone {
+    min-height: 200px;
+  }
+
+  /* Controles aparecen DEBAJO */
+  .controls {
+    order: 2;
+    width: 100%;
+    border-right: none;
+    border-top: 1px solid #1e1e1e;
+    overflow-y: visible;
+    padding: 16px;
+    max-height: none;
+  }
+}
+
 /* ─── Tamaño de grilla ───────────────────────────────────────────────────────── */
 .gridOptions {
   display: flex;

@@ -80,4 +80,36 @@
 .main {
   flex: 1;
   overflow: auto;
+  min-height: 0;
+}
+
+/* ─── Responsive Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .header {
+    height: auto;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 8px 16px 0;
+    gap: 0;
+  }
+
+  .logo {
+    font-size: 19px;
+    flex: 1;
+    padding-bottom: 8px;
+  }
+
+  .tabs {
+    width: 100%;
+    border-top: 1px solid #1e1e1e;
+    height: 40px;
+  }
+
+  .tab {
+    flex: 1;
+    font-size: 12px;
+    padding: 0 4px;
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
 }
