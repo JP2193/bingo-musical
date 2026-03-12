@@ -1,0 +1,30 @@
+{
+  "playlist": {
+    "id": "demo_pop2000",
+    "name": "Pop de los 2000",
+    "imageUrl": null,
+    "totalTracks": 20
+  },
+  "tracks": [
+    { "id": "p01", "name": "...Baby One More Time", "artist": "Britney Spears", "thumbnail": null },
+    { "id": "p02", "name": "Toxic", "artist": "Britney Spears", "thumbnail": null },
+    { "id": "p03", "name": "Beautiful", "artist": "Christina Aguilera", "thumbnail": null },
+    { "id": "p04", "name": "Complicated", "artist": "Avril Lavigne", "thumbnail": null },
+    { "id": "p05", "name": "Crazy in Love", "artist": "Beyoncé", "thumbnail": null },
+    { "id": "p06", "name": "Single Ladies", "artist": "Beyoncé", "thumbnail": null },
+    { "id": "p07", "name": "Lose Yourself", "artist": "Eminem", "thumbnail": null },
+    { "id": "p08", "name": "Yeah!", "artist": "Usher ft. Lil Jon & Ludacris", "thumbnail": null },
+    { "id": "p09", "name": "In Da Club", "artist": "50 Cent", "thumbnail": null },
+    { "id": "p10", "name": "Hollaback Girl", "artist": "Gwen Stefani", "thumbnail": null },
+    { "id": "p11", "name": "Since U Been Gone", "artist": "Kelly Clarkson", "thumbnail": null },
+    { "id": "p12", "name": "Umbrella", "artist": "Rihanna", "thumbnail": null },
+    { "id": "p13", "name": "SOS", "artist": "Rihanna", "thumbnail": null },
+    { "id": "p14", "name": "Hot in Herre", "artist": "Nelly", "thumbnail": null },
+    { "id": "p15", "name": "Get The Party Started", "artist": "Pink", "thumbnail": null },
+    { "id": "p16", "name": "Irreplaceable", "artist": "Beyoncé", "thumbnail": null },
+    { "id": "p17", "name": "With Me", "artist": "Sum 41", "thumbnail": null },
+    { "id": "p18", "name": "Hey Ya!", "artist": "OutKast", "thumbnail": null },
+    { "id": "p19", "name": "Milkshake", "artist": "Kelis", "thumbnail": null },
+    { "id": "p20", "name": "Girlfriend", "artist": "Avril Lavigne", "thumbnail": null }
+  ]
+}

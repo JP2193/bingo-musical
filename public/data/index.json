@@ -1,0 +1,5 @@
+[
+  { "file": "demo-rock.json",    "name": "Rock Clásico"   },
+  { "file": "demo-latina.json",  "name": "Hits Latinos"   },
+  { "file": "demo-pop2000.json", "name": "Pop de los 2000" }
+]

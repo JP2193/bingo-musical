@@ -1,0 +1,27 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(231, 76, 60, 0.1);
+  border-left: 3px solid var(--danger);
+  color: var(--white);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.message {
+  flex: 1;
+}
+
+.dismiss {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  padding: 0 4px;
+  transition: color var(--transition);
+}
+
+.dismiss:hover {
+  color: var(--white);
+}

@@ -1,0 +1,138 @@
+/* ─── Variables ─────────────────────────────────────────────────────────────── */
+:root {
+  --black: #080808;
+  --surface: #111111;
+  --surface2: #1c1c1c;
+  --white: #f0ece2;
+  --muted: #666;
+  --yellow: #F5C842;
+  --spotify-green: #1DB954;
+  --danger: #e74c3c;
+  --success: #2ecc71;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --transition: 0.15s ease;
+}
+
+/* ─── Reset ─────────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* Noise texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+#root {
+  height: 100%;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+input,
+select {
+  font-family: var(--font-body);
+  color: var(--white);
+  background: var(--surface2);
+  border: 1px solid #333;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--yellow);
+}
+
+/* ─── Range inputs (sliders) — deben ir aquí, no en CSS Modules ───────────── */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: var(--surface2);
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--yellow);
+  cursor: pointer;
+  border: none;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--yellow);
+  border: none;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  background: var(--surface2);
+  height: 3px;
+}
+
+input[type='range']::-moz-range-track {
+  background: var(--surface2);
+  height: 3px;
+}
+
+/* ─── Print ─────────────────────────────────────────────────────────────────── */
+@media print {
+  body > *:not(#root) {
+    display: none;
+  }
+
+  .bingo-card-print {
+    width: 100%;
+    page-break-after: always;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

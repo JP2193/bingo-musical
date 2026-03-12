@@ -1,0 +1,30 @@
+{
+  "playlist": {
+    "id": "demo_rock",
+    "name": "Rock Clásico",
+    "imageUrl": null,
+    "totalTracks": 20
+  },
+  "tracks": [
+    { "id": "r01", "name": "Bohemian Rhapsody", "artist": "Queen", "thumbnail": null },
+    { "id": "r02", "name": "Smells Like Teen Spirit", "artist": "Nirvana", "thumbnail": null },
+    { "id": "r03", "name": "Hotel California", "artist": "Eagles", "thumbnail": null },
+    { "id": "r04", "name": "Stairway to Heaven", "artist": "Led Zeppelin", "thumbnail": null },
+    { "id": "r05", "name": "Back In Black", "artist": "AC/DC", "thumbnail": null },
+    { "id": "r06", "name": "Sweet Child O' Mine", "artist": "Guns N' Roses", "thumbnail": null },
+    { "id": "r07", "name": "Purple Haze", "artist": "Jimi Hendrix", "thumbnail": null },
+    { "id": "r08", "name": "(I Can't Get No) Satisfaction", "artist": "The Rolling Stones", "thumbnail": null },
+    { "id": "r09", "name": "November Rain", "artist": "Guns N' Roses", "thumbnail": null },
+    { "id": "r10", "name": "Don't Stop Believin'", "artist": "Journey", "thumbnail": null },
+    { "id": "r11", "name": "Enter Sandman", "artist": "Metallica", "thumbnail": null },
+    { "id": "r12", "name": "Living on a Prayer", "artist": "Bon Jovi", "thumbnail": null },
+    { "id": "r13", "name": "Highway to Hell", "artist": "AC/DC", "thumbnail": null },
+    { "id": "r14", "name": "Under the Bridge", "artist": "Red Hot Chili Peppers", "thumbnail": null },
+    { "id": "r15", "name": "With or Without You", "artist": "U2", "thumbnail": null },
+    { "id": "r16", "name": "Creep", "artist": "Radiohead", "thumbnail": null },
+    { "id": "r17", "name": "Come As You Are", "artist": "Nirvana", "thumbnail": null },
+    { "id": "r18", "name": "Roxanne", "artist": "The Police", "thumbnail": null },
+    { "id": "r19", "name": "Zombie", "artist": "The Cranberries", "thumbnail": null },
+    { "id": "r20", "name": "Black", "artist": "Pearl Jam", "thumbnail": null }
+  ]
+}

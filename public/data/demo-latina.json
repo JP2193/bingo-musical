@@ -1,0 +1,30 @@
+{
+  "playlist": {
+    "id": "demo_latina",
+    "name": "Hits Latinos",
+    "imageUrl": null,
+    "totalTracks": 20
+  },
+  "tracks": [
+    { "id": "l01", "name": "Despacito", "artist": "Luis Fonsi ft. Daddy Yankee", "thumbnail": null },
+    { "id": "l02", "name": "Hips Don't Lie", "artist": "Shakira", "thumbnail": null },
+    { "id": "l03", "name": "La Vida Es Un Carnaval", "artist": "Celia Cruz", "thumbnail": null },
+    { "id": "l04", "name": "Macarena", "artist": "Los Del Río", "thumbnail": null },
+    { "id": "l05", "name": "Suavemente", "artist": "Elvis Crespo", "thumbnail": null },
+    { "id": "l06", "name": "Corazón Espinado", "artist": "Santana ft. Maná", "thumbnail": null },
+    { "id": "l07", "name": "Oye Como Va", "artist": "Santana", "thumbnail": null },
+    { "id": "l08", "name": "La Gozadera", "artist": "Gente De Zona ft. Marc Anthony", "thumbnail": null },
+    { "id": "l09", "name": "Bailando", "artist": "Enrique Iglesias", "thumbnail": null },
+    { "id": "l10", "name": "Danza Kuduro", "artist": "Don Omar ft. Lucenzo", "thumbnail": null },
+    { "id": "l11", "name": "Gasolina", "artist": "Daddy Yankee", "thumbnail": null },
+    { "id": "l12", "name": "Mi Gente", "artist": "J Balvin ft. Willy William", "thumbnail": null },
+    { "id": "l13", "name": "X (EQUIS)", "artist": "Nicky Jam ft. J Balvin", "thumbnail": null },
+    { "id": "l14", "name": "El Perdón", "artist": "Nicky Jam ft. Enrique Iglesias", "thumbnail": null },
+    { "id": "l15", "name": "Taki Taki", "artist": "DJ Snake ft. Selena Gomez", "thumbnail": null },
+    { "id": "l16", "name": "La Bamba", "artist": "Ritchie Valens", "thumbnail": null },
+    { "id": "l17", "name": "Bamboleo", "artist": "Gipsy Kings", "thumbnail": null },
+    { "id": "l18", "name": "Ay Vamos", "artist": "J Balvin", "thumbnail": null },
+    { "id": "l19", "name": "Waka Waka", "artist": "Shakira", "thumbnail": null },
+    { "id": "l20", "name": "Loco Contigo", "artist": "DJ Snake ft. J Balvin", "thumbnail": null }
+  ]
+}

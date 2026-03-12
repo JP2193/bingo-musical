@@ -1,0 +1,140 @@
+.cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Área de imagen (parte superior, ocupa la mayor parte) ─────────────────── */
+.imgArea {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 5px 2px;
+  overflow: hidden;
+}
+
+.img {
+  height: 100%;
+  width: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  max-width: 100%;
+}
+
+.fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ─── Área de texto (parte inferior) ───────────────────────────────────────── */
+.textArea {
+  flex-shrink: 0;
+  padding: 2px 3px 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  text-align: center;
+}
+
+.name {
+  font-weight: 700;
+  line-height: 1.15;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.artist {
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.65;
+}
+
+/* ─── Modo edición: indicador visual en hover ───────────────────────────────── */
+.editMode {
+  cursor: pointer;
+}
+
+.editMode:hover .imgArea::after {
+  content: '✏️';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 2px;
+  padding: 1px 2px;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* ─── Form de edición inline ────────────────────────────────────────────────── */
+.editForm {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 5px;
+  z-index: 10;
+  justify-content: center;
+}
+
+.editInput {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid var(--yellow);
+  color: #fff;
+  font-size: 9px;
+  padding: 3px 4px;
+  box-sizing: border-box;
+  font-family: var(--font-body);
+}
+
+.editInput:focus {
+  outline: none;
+  border-color: #fff;
+}
+
+.editBtns {
+  display: flex;
+  gap: 3px;
+  justify-content: flex-end;
+  margin-top: 1px;
+}
+
+.editSave,
+.editCancel {
+  font-size: 10px;
+  padding: 2px 6px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+
+.editSave {
+  background: var(--yellow);
+  color: #000;
+}
+
+.editCancel {
+  background: #333;
+  color: #aaa;
+}

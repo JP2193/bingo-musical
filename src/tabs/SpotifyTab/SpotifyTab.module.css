@@ -1,0 +1,760 @@
+/* ─── Login ───────────────────────────────────────────────────────────────────── */
+.loginScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.loginCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+  padding: 40px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 52px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  line-height: 1;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.ingresoBtn {
+  width: 280px;
+  padding: 14px 0;
+  background: var(--yellow);
+  color: var(--black);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  transition: opacity var(--transition);
+}
+
+.ingresoBtn:hover {
+  opacity: 0.85;
+}
+
+.spotifyBtn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 22px;
+  background: var(--spotify-green);
+  color: #000;
+  font-weight: 600;
+  font-size: 13px;
+  transition: opacity var(--transition);
+}
+
+.spotifyBtn:hover {
+  opacity: 0.85;
+}
+
+/* ─── Config ──────────────────────────────────────────────────────────────────── */
+.config {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 28px;
+  max-width: 680px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  color: var(--yellow);
+  text-transform: uppercase;
+}
+
+.disconnectBtn {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 4px 10px;
+  border: 1px solid #333;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.disconnectBtn:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.inputRow {
+  display: flex;
+  gap: 10px;
+}
+
+.textInput {
+  flex: 1;
+  padding: 9px 12px;
+  font-size: 13px;
+  background: var(--surface2);
+  border: 1px solid #333;
+  color: var(--white);
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.textInput:focus {
+  border-color: var(--yellow);
+}
+
+.loadBtn {
+  padding: 9px 20px;
+  background: var(--surface2);
+  border: 1px solid #444;
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.loadBtn:hover:not(:disabled) {
+  background: var(--yellow);
+  color: var(--black);
+  border-color: var(--yellow);
+}
+
+/* ─── Playlist meta ──────────────────────────────────────────────────────────── */
+.playlistMeta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  background: var(--surface);
+  border-left: 3px solid var(--spotify-green);
+}
+
+.playlistImg {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.playlistName {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 3px;
+}
+
+.playlistTracks {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ─── Track thumbnails ───────────────────────────────────────────────────────── */
+.trackGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.trackThumb {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.trackThumb img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.noThumb {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--surface2);
+}
+
+.trackName {
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Grid options ───────────────────────────────────────────────────────────── */
+.gridOptions {
+  display: flex;
+  gap: 0;
+  border: 1px solid #333;
+  width: fit-content;
+}
+
+.gridBtn {
+  padding: 9px 22px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-right: 1px solid #333;
+  transition: color var(--transition), background var(--transition);
+}
+
+.gridBtn:last-child {
+  border-right: none;
+}
+
+.gridBtn:hover:not(.active) {
+  color: var(--white);
+  background: var(--surface2);
+}
+
+.gridBtn.active {
+  color: var(--yellow);
+  border-bottom: 2px solid var(--yellow);
+}
+
+/* ─── Actions ────────────────────────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reiniciarBtn {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 16px;
+  border: 1px solid #333;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.reiniciarBtn:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.goBtn {
+  padding: 11px 28px;
+  background: var(--yellow);
+  color: var(--black);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  transition: opacity var(--transition);
+}
+
+.goBtn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+/* ─── Guardar lista ──────────────────────────────────────────────────────────── */
+.saveListBtn {
+  align-self: flex-start;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 10px;
+  border: 1px solid #333;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.saveListBtn:hover {
+  color: var(--yellow);
+  border-color: var(--yellow);
+}
+
+.saveForm {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.saveInput {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--yellow);
+  color: var(--white);
+  outline: none;
+  font-family: var(--font-body);
+}
+
+.saveConfirmBtn {
+  padding: 7px 14px;
+  background: var(--yellow);
+  color: var(--black);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.saveCancelBtn {
+  padding: 7px 10px;
+  background: var(--surface2);
+  border: 1px solid #444;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ─── Mis listas guardadas ───────────────────────────────────────────────────── */
+.emptyLists {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.savedList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.savedItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: var(--surface2);
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.savedItem:hover {
+  border-left-color: var(--yellow);
+  background: var(--surface);
+}
+
+.savedInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.savedName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.savedMeta {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.deleteBtn {
+  font-size: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  opacity: 0.4;
+  flex-shrink: 0;
+  transition: opacity var(--transition);
+  line-height: 1;
+}
+
+.deleteBtn:hover {
+  opacity: 1;
+}
+
+/* ─── Login: nota de listas guardadas ───────────────────────────────────────── */
+.savedSectionLogin {
+  margin-top: 8px;
+}
+
+.savedNote {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ─── Botón invitado + hint ─────────────────────────────────────────────────── */
+.guestBtn {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 8px 22px;
+  border: 1px solid #333;
+  transition: color var(--transition), border-color var(--transition);
+  margin-top: -6px;
+}
+
+.guestBtn:hover {
+  color: var(--white);
+  border-color: #555;
+}
+
+.guestHint {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+/* ─── Export/Import JSON ─────────────────────────────────────────────────────── */
+.savedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.savedActions {
+  display: flex;
+  gap: 6px;
+}
+
+.jsonBtn {
+  font-size: 11px;
+  padding: 3px 10px;
+  border: 1px solid #333;
+  color: var(--muted);
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.jsonBtn:hover:not(:disabled) {
+  color: var(--yellow);
+  border-color: var(--yellow);
+}
+
+.jsonBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ─── Rename inline ──────────────────────────────────────────────────────────── */
+.renameInput {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--yellow);
+  color: var(--white);
+  font-size: 12px;
+  padding: 3px 7px;
+  font-family: var(--font-body);
+  outline: none;
+  min-width: 0;
+}
+
+.renameBtn {
+  font-size: 13px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px 5px;
+  opacity: 0.3;
+  flex-shrink: 0;
+  transition: opacity var(--transition), color var(--transition);
+  line-height: 1;
+  color: var(--muted);
+}
+
+.renameBtn:hover {
+  opacity: 1;
+  color: var(--yellow);
+}
+
+.savedItemBtns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── Track editor header + save-as ─────────────────────────────────────────── */
+.trackEditorBtns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.saveAsBtn {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 5px 10px;
+  border: 1px solid #333;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.saveAsBtn:hover {
+  color: var(--yellow);
+  border-color: var(--yellow);
+}
+
+.saveAsRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 0 4px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.saveAsInput {
+  flex: 1;
+  padding: 6px 9px;
+  font-size: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--yellow);
+  color: var(--white);
+  outline: none;
+  font-family: var(--font-body);
+  min-width: 0;
+}
+
+/* ─── Layout dos columnas ────────────────────────────────────────────────────── */
+.twoCol {
+  display: flex;
+  height: calc(100vh - 56px);
+  overflow: hidden;
+}
+
+.leftPanel {
+  flex: 0 0 400px;
+  overflow-y: auto;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  border-right: 1px solid #1e1e1e;
+}
+
+.rightPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px 24px;
+}
+
+/* ─── Editor de tracks ───────────────────────────────────────────────────────── */
+.trackEditorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #222;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.saveTracksBtn {
+  padding: 7px 18px;
+  background: var(--yellow);
+  color: var(--black);
+  font-weight: 700;
+  font-size: 12px;
+  transition: opacity var(--transition);
+}
+
+.saveTracksBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.trackList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.trackRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #161616;
+}
+
+.trackIdx {
+  font-size: 10px;
+  color: var(--muted);
+  width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.trackThumbSmall {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.trackThumbEmpty {
+  width: 28px;
+  height: 28px;
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+
+.trackInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--white);
+  font-size: 12px;
+  padding: 3px 4px;
+  font-family: var(--font-body);
+  transition: border-color var(--transition), background var(--transition);
+  min-width: 0;
+}
+
+.trackInput:hover,
+.trackInput:focus {
+  border-bottom-color: var(--yellow);
+  outline: none;
+  background: var(--surface2);
+}
+
+.trackInputArtist {
+  flex: 0 0 140px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* ─── Guest Screen ───────────────────────────────────────────────────────────── */
+.guestScreen {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px;
+  max-width: 680px;
+}
+
+.guestHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.guestSubtitle {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.guestList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guestListItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.guestListItem:hover {
+  border-left-color: var(--yellow);
+  background: var(--surface);
+}
+
+.guestListItemSelected {
+  border-left-color: var(--spotify-green) !important;
+  background: var(--surface);
+}
+
+.guestListThumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.guestListInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.guestListName {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--white);
+}
+
+.guestListMeta {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.guestHideBtn {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 8px;
+  flex-shrink: 0;
+  opacity: 0.4;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--transition), color var(--transition);
+}
+
+.guestHideBtn:hover {
+  opacity: 1;
+  color: var(--danger);
+}
+
+.guestSelectedCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-left: 3px solid var(--spotify-green);
+}
+
+.guestSelectedThumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.guestSelectedName {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--white);
+}
+
+.guestSelectedCount {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}

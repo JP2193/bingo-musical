@@ -1,0 +1,155 @@
+/* ─── Layout dos columnas (igual al Calibrador) ──────────────────────────────── */
+.layout {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ─── Panel izquierdo ────────────────────────────────────────────────────────── */
+.controls {
+  width: 280px;
+  flex-shrink: 0;
+  border-right: 1px solid #1e1e1e;
+  padding: 24px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Grid de botones ────────────────────────────────────────────────────────── */
+.btnGrid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #222;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid #222;
+  background: var(--surface);
+  color: var(--white);
+  transition: background var(--transition), color var(--transition);
+  text-align: left;
+  width: 100%;
+}
+
+.actionBtn.primary {
+  background: var(--yellow);
+  color: var(--black);
+}
+
+.actionBtn.primary:hover:not(:disabled) {
+  background: #e0b530;
+}
+
+.actionBtn.secondary:hover:not(:disabled),
+.actionBtn.loteBtn:hover:not(:disabled) {
+  background: var(--surface2);
+  color: var(--yellow);
+}
+
+.actionBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btnIcon {
+  font-size: 16px;
+}
+
+/* ─── Lote button wrapper ─────────────────────────────────────────────────────── */
+.loteBtnWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.loteBtnWrapper .actionBtn {
+  border-bottom: 1px solid #222;
+}
+
+.stepperRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--surface);
+}
+
+/* ─── Progress ───────────────────────────────────────────────────────────────── */
+.progressSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cancelBtn {
+  align-self: flex-start;
+  padding: 5px 14px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid #444;
+  color: var(--muted);
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.cancelBtn:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ─── Success / error banners ─────────────────────────────────────────────────── */
+.successBanner {
+  padding: 10px 14px;
+  background: rgba(46, 204, 113, 0.1);
+  border-left: 3px solid var(--success);
+  color: var(--white);
+  font-size: 13px;
+}
+
+/* ─── Panel derecho: preview ─────────────────────────────────────────────────── */
+.preview {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* max-width: 800px iguala exactamente el ancho del export off-screen */
+.cardWrapper {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 800px;
+}
+
+.cardNumber {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--yellow);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2px 7px;
+  pointer-events: none;
+}
+
+.noCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 300px;
+  color: var(--muted);
+  font-size: 13px;
+  border: 1px dashed #333;
+}
