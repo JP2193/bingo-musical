@@ -113,7 +113,7 @@ export function CardsTab() {
         />
       )
 
-      await new Promise((r) => setTimeout(r, 80))
+      await new Promise((r) => setTimeout(r, 200))
 
       const cardEl = container.firstChild
       const blob = await captureCard(cardEl)
@@ -197,7 +197,7 @@ export function CardsTab() {
           />
         )
 
-        await new Promise((r) => setTimeout(r, 80))
+        await new Promise((r) => setTimeout(r, 200))
 
         const cardEl = container.firstChild
         const blob = await captureCard(cardEl)

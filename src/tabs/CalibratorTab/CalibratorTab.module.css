@@ -317,6 +317,35 @@
   }
 }
 
+/* ─── Tamaño de miniatura ────────────────────────────────────────────────────── */
+.thumbSizeRow {
+  display: flex;
+  gap: 4px;
+}
+
+.thumbSizeBtn {
+  flex: 1;
+  padding: 7px 4px;
+  border: 1px solid #333;
+  background: var(--surface2);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.thumbSizeBtn:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.thumbSizeBtn.active {
+  background: var(--yellow);
+  color: var(--black);
+  border-color: var(--yellow);
+}
+
 /* ─── Tamaño de grilla ───────────────────────────────────────────────────────── */
 .gridOptions {
   display: flex;

@@ -9,6 +9,8 @@ export function BingoCell({
   cellBg = '#ffffff',
   editMode = false,
   onEdit,
+  showThumbnail = true,
+  thumbnailSize = 'auto',
 }) {
   const [imgError, setImgError] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -23,6 +25,13 @@ export function BingoCell({
   const initial = track.artist?.[0]?.toUpperCase() ?? '?'
   const fontSize = track._fontSize ?? 9
   const artistSize = Math.round(fontSize * 0.85)
+
+  const imgAreaStyle = !showThumbnail
+    ? { display: 'none' }
+    : thumbnailSize === 'small'  ? { flex: '0 1 25%', minHeight: 0 }
+    : thumbnailSize === 'medium' ? { flex: '0 1 45%', minHeight: 0 }
+    : thumbnailSize === 'large'  ? { flex: '0 1 65%', minHeight: 0 }
+    : {} // auto: la clase CSS maneja flex: 1
 
   function handleDoubleClick() {
     if (!editMode) return
@@ -51,12 +60,12 @@ export function BingoCell({
 
   return (
     <div
-      className={`${styles.cell} ${editMode ? styles.editMode : ''}`}
+      className={`${styles.cell} ${editMode ? styles.editMode : ''} ${!showThumbnail ? styles.noThumb : ''}`}
       style={{ background: cellBg }}
       onDoubleClick={handleDoubleClick}
     >
       {/* Área de imagen */}
-      <div className={styles.imgArea}>
+      <div className={styles.imgArea} style={imgAreaStyle}>
         {imgSrc && !imgError ? (
           <img
             src={imgSrc}

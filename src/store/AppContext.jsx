@@ -35,6 +35,9 @@ const initialState = {
     innerBordersOnly: false,
     overlayColor: '#ffffff',
     cellPadding: 2,
+    // Thumbnail controls
+    showThumbnail: true,
+    thumbnailSize: 'auto',
   },
 
   // Cartones

@@ -52,9 +52,7 @@
   font-weight: 700;
   line-height: 1.15;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  max-height: calc(1.15em * 2);
 }
 
 .artist {
@@ -63,6 +61,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   opacity: 0.65;
+}
+
+/* ─── Sin miniatura: texto centrado verticalmente ───────────────────────────── */
+.noThumb {
+  justify-content: center;
 }
 
 /* ─── Modo edición: indicador visual en hover ───────────────────────────────── */

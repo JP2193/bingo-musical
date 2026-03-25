@@ -140,6 +140,43 @@ export function CalibratorTab({ onGoToCards }) {
           />
         </section>
 
+        {/* Miniaturas */}
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>🖼 Miniaturas</h3>
+          <label
+            className={styles.toggleRow}
+            onClick={() => updateParam('showThumbnail', !calibration.showThumbnail)}
+          >
+            <span className={styles.toggleLabel}>Mostrar miniaturas</span>
+            <div className={`${styles.toggleSwitch} ${calibration.showThumbnail ? styles.toggleOn : ''}`} />
+          </label>
+          {calibration.showThumbnail && (
+            <>
+              <div className={styles.thumbSizeRow}>
+                {[
+                  { value: 'auto', label: 'Auto' },
+                  { value: 'small', label: 'Pequeña' },
+                  { value: 'medium', label: 'Mediana' },
+                  { value: 'large', label: 'Grande' },
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    className={`${styles.thumbSizeBtn} ${calibration.thumbnailSize === value ? styles.active : ''}`}
+                    onClick={() => updateParam('thumbnailSize', value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {calibration.thumbnailSize !== 'auto' && (
+                <p className={styles.toggleHint}>
+                  Mantiene el tamaño elegido si hay espacio. Si el texto lo necesita, la imagen se achica.
+                </p>
+              )}
+            </>
+          )}
+        </section>
+
         {/* Texto */}
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>🔤 Texto</h3>

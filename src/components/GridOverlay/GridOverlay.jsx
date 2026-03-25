@@ -33,6 +33,8 @@ export function GridOverlay({
     cellBorderRadius = 0,
     innerBordersOnly = false,
     cellPadding = 2,
+    showThumbnail = true,
+    thumbnailSize = 'auto',
   } = calibration
 
   const { cols, rows } = gridSize
@@ -102,6 +104,8 @@ export function GridOverlay({
                 cellBg={cellBg}
                 editMode={editMode}
                 onEdit={(patch) => onEditCell?.(i, patch)}
+                showThumbnail={showThumbnail}
+                thumbnailSize={thumbnailSize}
               />
             )}
           </div>

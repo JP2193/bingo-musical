@@ -23,12 +23,18 @@ export async function imageUrlToBase64(url) {
  * @returns {Promise<Blob>}
  */
 export async function captureCard(element) {
+  // Esperar a que todas las fuentes estén cargadas antes de capturar
+  await document.fonts.ready
+
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: false,    // false: las URLs de Spotify ya fueron convertidas a base64
     allowTaint: true,  // requerido cuando useCORS es false
     logging: false,
     backgroundColor: null,
+    imageTimeout: 0,
+    width: element.offsetWidth,
+    height: element.offsetHeight,
   })
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
 }
