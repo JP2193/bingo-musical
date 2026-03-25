@@ -50,13 +50,13 @@
 
 .name {
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.4;
   overflow: hidden;
-  max-height: calc(1.15em * 2);
+  max-height: calc(1.4em * 2);
 }
 
 .artist {
-  line-height: 1.15;
+  line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
