@@ -3,20 +3,22 @@ import { AppProvider } from './store/AppContext'
 import { SpotifyTab } from './tabs/SpotifyTab/SpotifyTab'
 import { CalibratorTab } from './tabs/CalibratorTab/CalibratorTab'
 import { CardsTab } from './tabs/CardsTab/CardsTab'
+import { EventoTab } from './tabs/EventoTab/EventoTab'
 import styles from './App.module.css'
 
 const TABS = [
+  { id: 'evento', label: 'Evento' },
   { id: 'spotify', label: 'Inicio' },
   { id: 'calibrador', label: 'Calibrador' },
   { id: 'cartones', label: 'Cartones' },
 ]
 
 function AppInner() {
-  const [activeTab, setActiveTab] = useState('spotify')
+  const [activeTab, setActiveTab] = useState('evento')
   const [homeSignal, setHomeSignal] = useState(0)
 
   function handleLogoClick() {
-    setActiveTab('spotify')
+    setActiveTab('evento')
     setHomeSignal((s) => s + 1)
   }
 
@@ -40,6 +42,7 @@ function AppInner() {
       </header>
 
       <main className={styles.main}>
+        {activeTab === 'evento' && <EventoTab />}
         {activeTab === 'spotify' && (
           <SpotifyTab
             onGoToCalibrator={() => setActiveTab('calibrador')}

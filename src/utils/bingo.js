@@ -58,3 +58,39 @@ export function generateUniqueCard(tracks, cols, rows, previousCards) {
     `No hay suficientes combinaciones únicas para generar ${previousCards.length + 1} cartones distintos con este pool de canciones.`
   )
 }
+
+/**
+ * Genera qty cartones únicos para el evento.
+ * Cada cartón es un array de cols*rows IDs de Spotify en el orden del grid.
+ * Usa fingerprint por contenido (sort) para garantizar que no haya dos iguales.
+ * @param {Array} tracks - array de objetos { id, ... }
+ * @param {number} cols
+ * @param {number} rows
+ * @param {number} qty
+ * @returns {Array<Array<string>>} array de arrays de IDs
+ */
+export function generateAllUniqueCards(tracks, cols, rows, qty) {
+  const usedFingerprints = new Set()
+  const result = []
+
+  for (let i = 0; i < qty; i++) {
+    let attempts = 0
+    while (attempts < 1000) {
+      const ids = shuffleArray([...tracks]).slice(0, cols * rows).map((t) => t.id)
+      const fp = JSON.stringify([...ids].sort())
+      if (!usedFingerprints.has(fp)) {
+        usedFingerprints.add(fp)
+        result.push(ids)
+        break
+      }
+      attempts++
+    }
+    if (result.length <= i) {
+      throw new Error(
+        `No hay suficientes combinaciones únicas para generar ${qty} cartones con este pool de canciones.`
+      )
+    }
+  }
+
+  return result
+}
