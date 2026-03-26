@@ -62,14 +62,14 @@ export function EventoTab() {
     }
 
     const tracks = playlistActiva?.tracks ?? []
-    if (tracks.length < 16) {
-      setError(`La playlist tiene ${tracks.length} temas. Necesitás al menos 16 para un cartón 4×4`)
+    if (tracks.length < 15) {
+      setError(`La playlist tiene ${tracks.length} temas. Necesitás al menos 15 para un cartón 3×5`)
       return
     }
 
     setGenerando(true)
     try {
-      const ids = generateAllUniqueCards(tracks, 4, 4, cantidad)
+      const ids = generateAllUniqueCards(tracks, 3, 5, cantidad)
 
       await deleteCartonesByPlaylist(playlistActivaId)
 
@@ -157,7 +157,7 @@ export function EventoTab() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Generar cartones</h2>
 
-        <p className={styles.hint}>Se generarán cartones de 4×4 (16 temas por cartón)</p>
+        <p className={styles.hint}>Se generarán cartones de 3×5 (15 temas por cartón)</p>
 
         <div className={styles.inputRow}>
           <label className={styles.label}>Cantidad de cartones</label>
