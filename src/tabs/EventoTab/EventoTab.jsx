@@ -50,6 +50,7 @@ export function EventoTab() {
   const [playlists, setPlaylists] = useState([])
   const [playlistActivaId, setPlaylistActivaId] = useState('')
   const [cantidad, setCantidad] = useState(120)
+  const [formato, setFormato] = useState('3x5')
   const [error, setError] = useState('')
   const [progreso, setProgreso] = useState(null)
   const [exito, setExito] = useState('')
@@ -132,18 +133,22 @@ export function EventoTab() {
     }
   }
 
+  const formatoConfig = formato === '4x4'
+    ? { cols: 4, rows: 4, minTracks: 16, label: '4×4 (16 temas por cartón)' }
+    : { cols: 3, rows: 5, minTracks: 15, label: '3×5 (15 temas por cartón)' }
+
   async function handleGenerarCartones() {
     setError('')
     setExito('')
     setProgreso(null)
     if (!playlistActivaId) { setError('Seleccioná una playlist primero'); return }
-    if (tracks.length < 15) {
-      setError(`La playlist tiene ${tracks.length} temas. Necesitás al menos 15 para un cartón 3×5`)
+    if (tracks.length < formatoConfig.minTracks) {
+      setError(`La playlist tiene ${tracks.length} temas. Necesitás al menos ${formatoConfig.minTracks} para un cartón ${formato}`)
       return
     }
     setGenerando(true)
     try {
-      const ids = generateAllUniqueCards(tracks, 3, 5, cantidad)
+      const ids = generateAllUniqueCards(tracks, formatoConfig.cols, formatoConfig.rows, cantidad)
       await deleteCartonesByPlaylist(playlistActivaId)
       const cartones = ids.map((track_ids, i) => ({ numero: i + 1, playlist_id: playlistActivaId, track_ids }))
       await insertCartonesBatch(cartones, (ins, total) => setProgreso({ insertados: ins, total }))
@@ -460,7 +465,14 @@ export function EventoTab() {
       {/* ── Sección 2: Generar cartones ────────────────────────────────────── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Generar cartones</h2>
-        <p className={styles.hint}>Se generarán cartones de 3×5 (15 temas por cartón)</p>
+        <div className={styles.inputRow}>
+          <label className={styles.label}>Formato</label>
+          <select className={styles.select} value={formato} onChange={(e) => setFormato(e.target.value)}>
+            <option value="3x5">3×5 — 15 temas por cartón (horizontal)</option>
+            <option value="4x4">4×4 — 16 temas por cartón (vertical)</option>
+          </select>
+        </div>
+        <p className={styles.hint}>Se generarán cartones de {formatoConfig.label}</p>
         <div className={styles.inputRow}>
           <label className={styles.label}>Cantidad de cartones</label>
           <div className={styles.stepper}>

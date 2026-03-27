@@ -9,17 +9,7 @@ function injectStyles() {
   const style = document.createElement('style')
   style.id = STYLE_ID
   style.textContent = `
-    .cp-page {
-      width: 420mm;
-      height: 296mm;
-      display: grid;
-      grid-template-columns: 210mm 210mm;
-      grid-template-rows: 148mm 148mm;
-      background: white;
-    }
     .cp-carton {
-      width: 210mm;
-      height: 148mm;
       background: white;
       display: flex;
       flex-direction: column;
@@ -84,8 +74,6 @@ function injectStyles() {
     .cp-grid {
       flex: 1;
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      grid-template-rows: repeat(3, 1fr);
       gap: 2mm;
     }
     .cp-celda {
@@ -136,7 +124,14 @@ function escapeHTML(str) {
     .replace(/"/g, '&quot;')
 }
 
-function buildCartonHTML(numero, tracks) {
+function buildCartonHTML(numero, tracks, is4x4) {
+  const cartonStyle = is4x4
+    ? 'width:148mm;height:210mm;'
+    : 'width:210mm;height:148mm;'
+  const gridCols = is4x4 ? 4 : 5
+  const gridRows = is4x4 ? 4 : 3
+  const gridStyle = `grid-template-columns:repeat(${gridCols},1fr);grid-template-rows:repeat(${gridRows},1fr);`
+
   const celdas = tracks
     .map(
       (t) => `
@@ -148,7 +143,7 @@ function buildCartonHTML(numero, tracks) {
     .join('')
 
   return `
-    <div class="cp-carton">
+    <div class="cp-carton" style="${cartonStyle}">
       <img class="cp-floral" src="/img/1.png" alt="" crossorigin="anonymous">
       <div class="cp-content">
         <div class="cp-header">
@@ -160,7 +155,7 @@ function buildCartonHTML(numero, tracks) {
           <div class="cp-sep-icono">✦</div>
           <div class="cp-sep-linea"></div>
         </div>
-        <div class="cp-grid">${celdas}</div>
+        <div class="cp-grid" style="${gridStyle}">${celdas}</div>
       </div>
     </div>`
 }
@@ -200,7 +195,8 @@ function waitForImages(container) {
 }
 
 /**
- * Genera un PDF A3 landscape con los cartones dados (4 por página en grilla 2×2).
+ * Genera un PDF A3 con los cartones dados (4 por página en grilla 2×2).
+ * Detecta el formato automáticamente según tracks.length: 15 → 3×5 landscape, 16 → 4×4 portrait.
  * @param {Array<{ numero: number, nombre: string, apellido: string, tracks: Array<{name: string, artist: string}> }>} cartones
  * @param {(mensaje: string) => void} [onProgreso]
  */
@@ -208,7 +204,14 @@ export async function imprimirCartones(cartones, onProgreso) {
   injectStyles()
   await ensureFonts()
 
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' })
+  const is4x4 = cartones[0]?.tracks?.length === 16
+  const orientation = is4x4 ? 'portrait' : 'landscape'
+  const pageW = is4x4 ? 297 : 420
+  const pageH = is4x4 ? 420 : 297
+  const cardW = is4x4 ? 148 : 210
+  const cardH = is4x4 ? 210 : 148
+
+  const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a3' })
 
   const groups = []
   for (let i = 0; i < cartones.length; i += 4) {
@@ -220,10 +223,16 @@ export async function imprimirCartones(cartones, onProgreso) {
 
     const group = groups[gi]
     const pageEl = document.createElement('div')
-    pageEl.className = 'cp-page'
-    pageEl.style.cssText = 'position: fixed; left: -9999px; top: 0; z-index: -1;'
+    pageEl.style.cssText = `
+      position: fixed; left: -9999px; top: 0; z-index: -1;
+      width: ${pageW}mm; height: ${pageH}mm;
+      display: grid;
+      grid-template-columns: ${cardW}mm ${cardW}mm;
+      grid-template-rows: ${cardH}mm ${cardH}mm;
+      background: white;
+    `
 
-    const htmlParts = group.map((card) => buildCartonHTML(card.numero, card.tracks))
+    const htmlParts = group.map((card) => buildCartonHTML(card.numero, card.tracks, is4x4))
     for (let i = group.length; i < 4; i++) {
       htmlParts.push('<div style="background:white;"></div>')
     }
@@ -247,9 +256,9 @@ export async function imprimirCartones(cartones, onProgreso) {
 
     document.body.removeChild(pageEl)
 
-    if (gi > 0) pdf.addPage('a3', 'landscape')
+    if (gi > 0) pdf.addPage('a3', orientation)
     const imgData = canvas.toDataURL('image/jpeg', 0.92)
-    pdf.addImage(imgData, 'JPEG', 0, 0, 420, 297)
+    pdf.addImage(imgData, 'JPEG', 0, 0, pageW, pageH)
   }
 
   onProgreso?.('')
