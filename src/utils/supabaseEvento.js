@@ -255,6 +255,14 @@ export async function agregarInvitado(nombre, apellido, playlistId, cartonId) {
   }
 }
 
+export async function resetearAsignadoAt(invitadoId) {
+  const { error } = await supabaseAdmin
+    .from('invitados')
+    .update({ asignado_at: null })
+    .eq('id', invitadoId)
+  if (error) throw error
+}
+
 export async function eliminarInvitado(invitadoId, cartonId) {
   if (cartonId) {
     await supabaseAdmin.from('cartones').update({ nombre_invitado: null }).eq('id', cartonId)

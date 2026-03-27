@@ -21,6 +21,7 @@ import {
   cambiarCarton,
   agregarInvitado,
   eliminarInvitado,
+  resetearAsignadoAt,
 } from '../../utils/supabaseEvento'
 import styles from './EventoTab.module.css'
 
@@ -82,6 +83,7 @@ export function EventoTab() {
   const [editandoId, setEditandoId] = useState(null)
   const [nuevoCartonId, setNuevoCartonId] = useState('')
   const [confirmEliminarId, setConfirmEliminarId] = useState(null)
+  const [confirmResetearId, setConfirmResetearId] = useState(null)
   const [mostrandoFormNuevo, setMostrandoFormNuevo] = useState(false)
   const [formNuevo, setFormNuevo] = useState({ nombre: '', apellido: '', cartonId: '' })
   const [loadingFormNuevo, setLoadingFormNuevo] = useState(false)
@@ -323,6 +325,17 @@ export function EventoTab() {
       await handleCargarInvitados()
     } catch {
       setError('Error al cambiar el cartón')
+    }
+  }
+
+  async function handleResetearInvitado(inv) {
+    if (confirmResetearId !== inv.id) { setConfirmResetearId(inv.id); return }
+    try {
+      await resetearAsignadoAt(inv.id)
+      setConfirmResetearId(null)
+      await handleCargarInvitados()
+    } catch {
+      setError('Error al resetear el invitado')
     }
   }
 
@@ -715,9 +728,35 @@ export function EventoTab() {
                                         setEditandoId(editandoId === inv.id ? null : inv.id)
                                         setNuevoCartonId('')
                                         setConfirmEliminarId(null)
+                                        setConfirmResetearId(null)
                                       }}
                                       title="Cambiar cartón"
                                     >✏</button>
+                                    {inv.asignado_at && (
+                                      confirmResetearId === inv.id ? (
+                                        <>
+                                          <button
+                                            className={`${styles.iconBtn} ${styles.dangerIconBtn}`}
+                                            onClick={() => handleResetearInvitado(inv)}
+                                            title="Confirmar reset"
+                                          >Sí</button>
+                                          <button
+                                            className={styles.iconBtn}
+                                            onClick={() => setConfirmResetearId(null)}
+                                          >No</button>
+                                        </>
+                                      ) : (
+                                        <button
+                                          className={styles.iconBtn}
+                                          onClick={() => {
+                                            setConfirmResetearId(inv.id)
+                                            setConfirmEliminarId(null)
+                                            setEditandoId(null)
+                                          }}
+                                          title={`Resetear sesión de ${inv.nombre}`}
+                                        >↺</button>
+                                      )
+                                    )}
                                     {confirmEliminarId === inv.id ? (
                                       <>
                                         <button
@@ -735,6 +774,7 @@ export function EventoTab() {
                                         onClick={() => {
                                           setConfirmEliminarId(inv.id)
                                           setEditandoId(null)
+                                          setConfirmResetearId(null)
                                         }}
                                         title={`Eliminar ${inv.nombre}`}
                                       >🗑</button>
