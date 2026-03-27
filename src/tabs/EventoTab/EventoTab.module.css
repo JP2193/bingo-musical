@@ -605,6 +605,15 @@
   color: var(--danger) !important;
 }
 
+.trOculto td {
+  opacity: 0.4;
+}
+
+.iconBtnOculto {
+  border-color: var(--muted) !important;
+  color: var(--muted) !important;
+}
+
 .badgeGris  { font-size: 11px; color: var(--muted); }
 .badgeAmarillo { font-size: 11px; color: var(--yellow); }
 .badgeVerde { font-size: 11px; color: var(--success); }

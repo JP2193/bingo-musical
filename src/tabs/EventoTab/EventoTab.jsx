@@ -23,6 +23,7 @@ import {
   eliminarInvitado,
   resetearAsignadoAt,
   getCartonesTrackIds,
+  toggleOcultoInvitado,
 } from '../../utils/supabaseEvento'
 import { imprimirCartones } from '../../utils/imprimirCartones'
 import styles from './EventoTab.module.css'
@@ -382,6 +383,15 @@ export function EventoTab() {
       setError('Error al agregar el invitado')
     } finally {
       setLoadingFormNuevo(false)
+    }
+  }
+
+  async function handleToggleOculto(inv) {
+    try {
+      await toggleOcultoInvitado(inv.id, !inv.oculto)
+      await handleCargarInvitados()
+    } catch {
+      setError('Error al cambiar visibilidad del invitado')
     }
   }
 
@@ -824,7 +834,7 @@ export function EventoTab() {
                         <tbody>
                           {filteredInvitados.map((inv) => (
                             <>
-                              <tr key={inv.id}>
+                              <tr key={inv.id} className={inv.oculto ? styles.trOculto : ''}>
                                 <td className={styles.checkCell}>
                                   <input
                                     type="checkbox"
@@ -845,6 +855,11 @@ export function EventoTab() {
                                 <td>{badgeInvitado(inv)}</td>
                                 <td>
                                   <div className={styles.actionRow}>
+                                    <button
+                                      className={`${styles.iconBtn} ${inv.oculto ? styles.iconBtnOculto : ''}`}
+                                      onClick={() => handleToggleOculto(inv)}
+                                      title={inv.oculto ? 'Hacer visible en lista' : 'Ocultar de lista'}
+                                    >{inv.oculto ? '🙈' : '👁'}</button>
                                     <button
                                       className={styles.iconBtn}
                                       onClick={() => {

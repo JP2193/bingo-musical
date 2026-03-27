@@ -143,11 +143,19 @@ export async function getCartonesTrackIds(cartonIds) {
 export async function getInvitados(playlistId) {
   const { data, error } = await supabase
     .from('invitados')
-    .select('id, nombre, apellido, carton_id, asignado_at, cartones(numero)')
+    .select('id, nombre, apellido, carton_id, asignado_at, oculto, cartones(numero)')
     .eq('playlist_id', playlistId)
     .order('orden', { ascending: true })
   if (error) throw error
   return data ?? []
+}
+
+export async function toggleOcultoInvitado(id, oculto) {
+  const { error } = await supabaseAdmin
+    .from('invitados')
+    .update({ oculto })
+    .eq('id', id)
+  if (error) throw error
 }
 
 export async function getCartonesSobrantes(playlistId) {
