@@ -258,7 +258,7 @@ export async function agregarInvitado(nombre, apellido, playlistId, cartonId) {
 export async function resetearAsignadoAt(invitadoId) {
   const { error } = await supabaseAdmin
     .from('invitados')
-    .update({ asignado_at: null })
+    .update({ asignado_at: null, sesion_valida: false })
     .eq('id', invitadoId)
   if (error) throw error
 }
