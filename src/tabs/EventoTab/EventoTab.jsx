@@ -59,6 +59,8 @@ export function EventoTab() {
   const [cantadas, setCantadas] = useState(new Set())
   const [loadingCanciones, setLoadingCanciones] = useState(false)
   const [confirmResetCanciones, setConfirmResetCanciones] = useState(false)
+  const [toggleStates, setToggleStates] = useState({})  // { [trackId]: 'loading' | 'ok' | 'err' }
+  const [toggleErrors, setToggleErrors] = useState({})  // { [trackId]: string }
 
   // Ranking
   const [ranking, setRanking] = useState(null)
@@ -170,16 +172,25 @@ export function EventoTab() {
       if (isActive) next.delete(trackId); else next.add(trackId)
       return next
     })
+    setToggleStates((prev) => ({ ...prev, [trackId]: 'loading' }))
+    setToggleErrors((prev) => { const next = { ...prev }; delete next[trackId]; return next })
+
     try {
       if (isActive) await desactivarCancion(playlistActivaId, trackId)
       else await activarCancion(playlistActivaId, trackId)
+
+      setToggleStates((prev) => ({ ...prev, [trackId]: 'ok' }))
+      setTimeout(() => {
+        setToggleStates((prev) => { const next = { ...prev }; delete next[trackId]; return next })
+      }, 1000)
     } catch {
       setCantadas((prev) => {
         const next = new Set(prev)
         if (isActive) next.add(trackId); else next.delete(trackId)
         return next
       })
-      setError('Error al actualizar la canción')
+      setToggleStates((prev) => ({ ...prev, [trackId]: 'err' }))
+      setToggleErrors((prev) => ({ ...prev, [trackId]: 'No se pudo guardar. Intentá de nuevo.' }))
     }
   }
 
@@ -472,18 +483,33 @@ export function EventoTab() {
               <div className={styles.trackList}>
                 {tracks.map((track) => {
                   const isActive = cantadas.has(track.id)
+                  const tState = toggleStates[track.id]
+                  const tError = toggleErrors[track.id]
                   return (
                     <div key={track.id} className={`${styles.trackRow} ${isActive ? styles.trackRowActive : ''}`}>
                       <div className={styles.trackInfo}>
                         <span className={styles.trackName}>{track.name}</span>
                         <span className={styles.trackArtist}>{track.artist}</span>
+                        {tError && <span className={styles.toggleError}>{tError}</span>}
                       </div>
                       <button
-                        className={`${styles.toggle} ${isActive ? styles.toggleOn : ''}`}
+                        className={[
+                          styles.toggle,
+                          isActive ? styles.toggleOn : '',
+                          tState === 'loading' ? styles.toggleLoading : '',
+                          tState === 'ok' ? styles.toggleOk : '',
+                        ].join(' ')}
                         onClick={() => handleToggleCancion(track.id, isActive)}
+                        disabled={tState === 'loading'}
                         aria-label={isActive ? 'Desactivar' : 'Activar'}
                       >
-                        <span className={styles.toggleThumb} />
+                        {tState === 'loading' ? (
+                          <span className={styles.toggleSpinner} />
+                        ) : tState === 'ok' ? (
+                          <span className={styles.toggleCheck}>✓</span>
+                        ) : (
+                          <span className={styles.toggleThumb} />
+                        )}
                       </button>
                     </div>
                   )
