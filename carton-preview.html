@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview · Cartón Físico</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=Jost:wght@300;400;600&display=swap" rel="stylesheet">
+
+<!--
+  ══════════════════════════════════════════════════════
+  EDITAR AQUÍ → copiar cambios a src/utils/cartonTemplate.js
+  ══════════════════════════════════════════════════════
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #111;
+    padding: 40px;
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .label {
+    color: #666;
+    font-family: monospace;
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  /* ── cp-carton ─────────────────────────── */
+  .cp-carton {
+    background: white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 0.8px solid rgba(184, 147, 90, 0.25);
+    border-radius: 0;
+  }
+
+  /* ── cp-floral ─────────────────────────── */
+  .cp-floral {
+    width: 100%;
+    height: 23mm;
+    object-fit: cover;
+    object-position: bottom;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  /* ── cp-content ────────────────────────── */
+  .cp-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 3mm 8mm 6mm;
+    min-height: 0;
+  }
+
+  /* ── cp-header ─────────────────────────── */
+  .cp-header {
+    text-align: center;
+    margin-bottom: 2mm;
+    flex-shrink: 0;
+  }
+
+  .cp-titulo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22pt;
+    font-weight: 600;
+    font-style: italic;
+    color: #b8935a;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .cp-numero {
+    font-family: 'Jost', sans-serif;
+    font-size: 5.5pt;
+    color: #ddd0bc;
+    letter-spacing: 1px;
+    margin-top: 1mm;
+  }
+
+  /* ── cp-sep ────────────────────────────── */
+  .cp-sep {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2mm;
+    flex-shrink: 0;
+  }
+
+  .cp-sep-linea {
+    flex: 1;
+    height: 0.5px;
+    background: #b8935a;
+    opacity: 0.4;
+  }
+
+  .cp-sep-icono {
+    color: #b8935a;
+    font-size: 7pt;
+    opacity: 0.7;
+  }
+
+  /* ── cp-grid ───────────────────────────── */
+  .cp-grid {
+    flex: 1;
+    display: grid;
+    gap: 2mm;
+  }
+
+  /* ── cp-celda ──────────────────────────── */
+  .cp-celda {
+    border: 1px solid rgba(212, 188, 148, 0.45);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1mm 1.5mm;
+    background: white;
+  }
+
+  .cp-nombre {
+    font-family: 'Jost', sans-serif;
+    font-weight: 600;
+    color: #6b5040;
+    line-height: 1.25;
+    margin-bottom: 2px;
+  }
+
+  .cp-artista {
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    color: #a8917a;
+    line-height: 1.2;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── 3×5 Landscape (210×148mm) ─────────────────────── -->
+<div>
+  <p class="label">3×5 · landscape · 210×148mm</p>
+  <div class="cp-carton" style="width:210mm;height:148mm;">
+    <img class="cp-floral" src="img/1.png" alt="">
+    <div class="cp-content">
+      <div class="cp-header">
+        <div class="cp-titulo">♪ Bingo Musical ♪</div>
+        <div class="cp-numero">Cartón #001</div>
+      </div>
+      <div class="cp-sep">
+        <div class="cp-sep-linea"></div>
+        <div class="cp-sep-icono">✦</div>
+        <div class="cp-sep-linea"></div>
+      </div>
+      <div class="cp-grid" style="grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(3,1fr);">
+        <div class="cp-celda"><div class="cp-nombre">A Dios Le Pido</div><div class="cp-artista">Juanes</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Waka Waka</div><div class="cp-artista">Shakira</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Hound Dog</div><div class="cp-artista">Elvis Presley</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Back In Black</div><div class="cp-artista">AC/DC</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Twist And Shout</div><div class="cp-artista">The Beatles</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Corazon Espinado</div><div class="cp-artista">Santana, Maná</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Dancing Queen</div><div class="cp-artista">ABBA</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Me Voy</div><div class="cp-artista">Julieta Venegas</div></div>
+        <div class="cp-celda"><div class="cp-nombre">A Veces</div><div class="cp-artista">Mambru</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Mariposa Tecknicolor</div><div class="cp-artista">Fito Páez</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Take on Me</div><div class="cp-artista">a-ha</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Eye of the Tiger</div><div class="cp-artista">Survivor</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Viva La Vida</div><div class="cp-artista">Coldplay</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Matador</div><div class="cp-artista">Los Fab. Cadillacs</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Mambo No. 5</div><div class="cp-artista">Lou Bega</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 4×4 Portrait (148×210mm) ──────────────────────── -->
+<div>
+  <p class="label">4×4 · portrait · 148×210mm</p>
+  <div class="cp-carton" style="width:148mm;height:210mm;">
+    <img class="cp-floral" src="img/1.png" alt="">
+    <div class="cp-content">
+      <div class="cp-header">
+        <div class="cp-titulo">♪ Bingo Musical ♪</div>
+        <div class="cp-numero">Cartón #002</div>
+      </div>
+      <div class="cp-sep">
+        <div class="cp-sep-linea"></div>
+        <div class="cp-sep-icono">✦</div>
+        <div class="cp-sep-linea"></div>
+      </div>
+      <div class="cp-grid" style="grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);">
+        <div class="cp-celda"><div class="cp-nombre">A Dios Le Pido</div><div class="cp-artista">Juanes</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Waka Waka</div><div class="cp-artista">Shakira</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Hound Dog</div><div class="cp-artista">Elvis Presley</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Back In Black</div><div class="cp-artista">AC/DC</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Twist And Shout</div><div class="cp-artista">The Beatles</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Corazon Espinado</div><div class="cp-artista">Santana, Maná</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Dancing Queen</div><div class="cp-artista">ABBA</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Me Voy</div><div class="cp-artista">Julieta Venegas</div></div>
+        <div class="cp-celda"><div class="cp-nombre">A Veces</div><div class="cp-artista">Mambru</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Mariposa Tecknicolor</div><div class="cp-artista">Fito Páez</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Take on Me</div><div class="cp-artista">a-ha</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Eye of the Tiger</div><div class="cp-artista">Survivor</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Viva La Vida</div><div class="cp-artista">Coldplay</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Matador</div><div class="cp-artista">Los Fab. Cadillacs</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Mambo No. 5</div><div class="cp-artista">Lou Bega</div></div>
+        <div class="cp-celda"><div class="cp-nombre">Don't Stop Me Now</div><div class="cp-artista">Queen</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function ajustarTexto() {
+    document.querySelectorAll('.cp-celda').forEach(celda => {
+      const nombre = celda.querySelector('.cp-nombre')
+      const artista = celda.querySelector('.cp-artista')
+      if (!nombre || !artista) return
+      const maxH = celda.clientHeight - 6
+      const maxW = celda.clientWidth - 6
+      let size = 16
+      nombre.style.fontSize = size + 'px'
+      while ((nombre.scrollWidth > maxW || nombre.scrollHeight > maxH * 0.6) && size > 6) {
+        size -= 0.5
+        nombre.style.fontSize = size + 'px'
+      }
+      artista.style.fontSize = (size * 0.82) + 'px'
+    })
+  }
+  window.addEventListener('load', ajustarTexto)
+  window.addEventListener('resize', ajustarTexto)
+</script>
+</body>
+</html>
