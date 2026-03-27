@@ -71,6 +71,9 @@ export const CARTON_CSS = `
     display: grid;
     gap: 2mm;
   }
+  .cp-carton--vertical .cp-grid {
+    max-height: 128mm;
+  }
   .cp-celda {
     border: 1px solid rgba(212, 188, 148, 0.45);
     border-radius: 6px;
@@ -128,7 +131,7 @@ export function buildCartonHTML(numero, tracks, is4x4) {
     .join('')
 
   return `
-    <div class="cp-carton" style="${cartonStyle}">
+    <div class="cp-carton${is4x4 ? ' cp-carton--vertical' : ''}" style="${cartonStyle}">
       <img class="cp-floral" src="/img/1.png" alt="" crossorigin="anonymous">
       <div class="cp-content">
         <div class="cp-header">

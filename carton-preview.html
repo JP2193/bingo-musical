@@ -113,6 +113,11 @@
     gap: 2mm;
   }
 
+  /* ── vertical (4×4 portrait): limitar alto del grid para celdas más cuadradas */
+  .cp-carton--vertical .cp-grid {
+    max-height: 128mm;
+  }
+
   /* ── cp-celda ──────────────────────────── */
   .cp-celda {
     border: 1px solid rgba(212, 188, 148, 0.45);
@@ -183,7 +188,7 @@
 <!-- ── 4×4 Portrait (148×210mm) ──────────────────────── -->
 <div>
   <p class="label">4×4 · portrait · 148×210mm</p>
-  <div class="cp-carton" style="width:148mm;height:210mm;">
+  <div class="cp-carton cp-carton--vertical" style="width:148mm;height:210mm;">
     <img class="cp-floral" src="img/1.png" alt="">
     <div class="cp-content">
       <div class="cp-header">
