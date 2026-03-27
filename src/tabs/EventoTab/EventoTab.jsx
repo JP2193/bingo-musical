@@ -76,6 +76,8 @@ export function EventoTab() {
   const [estado, setEstado] = useState(null)
   const [loadingEstado, setLoadingEstado] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmEliminarCartones, setConfirmEliminarCartones] = useState(false)
+  const [loadingEliminarCartones, setLoadingEliminarCartones] = useState(false)
 
   // Invitados
   const [invitados, setInvitados] = useState([])
@@ -271,6 +273,21 @@ export function EventoTab() {
       handleCargarEstado()
     } catch {
       setError('Error al resetear el evento')
+    }
+  }
+
+  async function handleEliminarCartones() {
+    if (!confirmEliminarCartones) { setConfirmEliminarCartones(true); return }
+    setLoadingEliminarCartones(true)
+    try {
+      await deleteCartonesByPlaylist(playlistActivaId)
+      setConfirmEliminarCartones(false)
+      setEstado(null)
+      setExito('✓ Cartones eliminados')
+    } catch {
+      setError('Error al eliminar los cartones')
+    } finally {
+      setLoadingEliminarCartones(false)
     }
   }
 
@@ -667,6 +684,16 @@ export function EventoTab() {
                 </button>
                 {confirmReset && (
                   <button className={styles.cancelBtn} onClick={() => setConfirmReset(false)}>Cancelar</button>
+                )}
+                <button
+                  className={`${styles.secondaryBtn} ${confirmEliminarCartones ? styles.dangerBtn : ''}`}
+                  onClick={handleEliminarCartones}
+                  disabled={!playlistActivaId || !estado || loadingEliminarCartones}
+                >
+                  {loadingEliminarCartones ? 'Eliminando...' : confirmEliminarCartones ? '¿Eliminar todo?' : '🗑 Eliminar cartones'}
+                </button>
+                {confirmEliminarCartones && (
+                  <button className={styles.cancelBtn} onClick={() => setConfirmEliminarCartones(false)}>Cancelar</button>
                 )}
               </div>
             </div>
