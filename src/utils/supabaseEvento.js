@@ -150,6 +150,14 @@ export async function getInvitados(playlistId) {
   return data ?? []
 }
 
+export async function desasignarCartones(invitadoIds) {
+  const { error } = await supabaseAdmin
+    .from('invitados')
+    .update({ carton_id: null, asignado_at: null, sesion_valida: false })
+    .in('id', invitadoIds)
+  if (error) throw error
+}
+
 export async function toggleOcultoInvitado(id, oculto) {
   const { error } = await supabaseAdmin
     .from('invitados')

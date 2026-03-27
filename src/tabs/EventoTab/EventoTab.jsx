@@ -24,6 +24,7 @@ import {
   resetearAsignadoAt,
   getCartonesTrackIds,
   toggleOcultoInvitado,
+  desasignarCartones,
 } from '../../utils/supabaseEvento'
 import { imprimirCartones } from '../../utils/imprimirCartones'
 import styles from './EventoTab.module.css'
@@ -94,11 +95,13 @@ export function EventoTab() {
   const [formNuevo, setFormNuevo] = useState({ nombre: '', apellido: '', cartonId: '' })
   const [loadingFormNuevo, setLoadingFormNuevo] = useState(false)
 
-  // Impresión
+  // Impresión / acciones en bloque
   const [seleccionados, setSeleccionados] = useState(new Set())
   const [modalImprimir, setModalImprimir] = useState(false)
   const [progresoImprimir, setProgresoImprimir] = useState('')
   const [generandoPDF, setGenerandoPDF] = useState(false)
+  const [modalDesasignar, setModalDesasignar] = useState(false)
+  const [loadingDesasignar, setLoadingDesasignar] = useState(false)
 
   useEffect(() => {
     async function cargarDatos() {
@@ -388,6 +391,23 @@ export function EventoTab() {
       setError('Error al agregar el invitado')
     } finally {
       setLoadingFormNuevo(false)
+    }
+  }
+
+  async function handleDesasignar() {
+    setLoadingDesasignar(true)
+    try {
+      const ids = filteredInvitados
+        .filter((inv) => seleccionados.has(inv.id) && inv.carton_id)
+        .map((inv) => inv.id)
+      if (ids.length) await desasignarCartones(ids)
+      setModalDesasignar(false)
+      setSeleccionados(new Set())
+      await handleCargarInvitados()
+    } catch {
+      setError('Error al desasignar cartones')
+    } finally {
+      setLoadingDesasignar(false)
     }
   }
 
@@ -823,6 +843,14 @@ export function EventoTab() {
                         >
                           🖨️ Imprimir seleccionados
                         </button>
+                        <button
+                          className={styles.printBtn}
+                          style={{ background: 'none', border: '1px solid #444', color: seleccionados.size === 0 ? '#444' : 'var(--danger)' }}
+                          disabled={seleccionados.size === 0}
+                          onClick={() => setModalDesasignar(true)}
+                        >
+                          Desasignar cartón
+                        </button>
                         <input
                           className={styles.buscadorInv}
                           style={{ flex: 1, minWidth: 120 }}
@@ -975,6 +1003,44 @@ export function EventoTab() {
           </div>
         )}
       </section>
+
+      {/* ── Modal: confirmar desasignación ────────────────────────────────── */}
+      {modalDesasignar && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <p className={styles.modalTitle}>
+              ¿Desasignar cartón de {seleccionados.size} {seleccionados.size === 1 ? 'invitado' : 'invitados'}?
+            </p>
+            <p className={styles.hint} style={{ fontSize: 12 }}>
+              Los cartones quedan libres y se pueden reasignar con "Pre-asignar cartones".
+            </p>
+            <ul className={styles.modalList}>
+              {filteredInvitados
+                .filter((inv) => seleccionados.has(inv.id))
+                .map((inv) => (
+                  <li key={inv.id}>
+                    {inv.carton_id
+                      ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}`
+                      : '(sin cartón)'}{' '}
+                    · {inv.nombre} {inv.apellido}
+                  </li>
+                ))}
+            </ul>
+            <div className={styles.modalActions}>
+              <button className={styles.cancelBtn} onClick={() => setModalDesasignar(false)} disabled={loadingDesasignar}>
+                Cancelar
+              </button>
+              <button
+                className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
+                onClick={handleDesasignar}
+                disabled={loadingDesasignar}
+              >
+                {loadingDesasignar ? 'Desasignando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal: confirmar impresión ─────────────────────────────────────── */}
       {modalImprimir && (
