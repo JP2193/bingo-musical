@@ -24,6 +24,8 @@ function injectStyles() {
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      border: 0.8px solid rgba(184, 147, 90, 0.25);
+      border-radius: 0;
     }
     .cp-floral {
       width: 100%;
