@@ -609,6 +609,123 @@
 .badgeAmarillo { font-size: 11px; color: var(--yellow); }
 .badgeVerde { font-size: 11px; color: var(--success); }
 
+/* ─── Checkbox columna ───────────────────────────────────────────────────────── */
+.checkCell {
+  width: 32px;
+  padding: 8px 6px !important;
+  text-align: center;
+}
+
+.checkCell input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--yellow);
+}
+
+/* ─── Barra de acciones de impresión ─────────────────────────────────────────── */
+.printBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.selectAllLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.selectAllLabel input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--yellow);
+}
+
+.printBtn {
+  padding: 8px 14px;
+  background: var(--yellow);
+  color: var(--black);
+  font-size: 13px;
+  font-weight: 700;
+  transition: opacity var(--transition);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.printBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.printBtn:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+/* ─── Modal de confirmación de impresión ─────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modalBox {
+  background: #1c1c1c;
+  border: 1px solid #333;
+  padding: 20px 24px;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.modalList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.modalList li {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.progresoImprimir {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+  padding: 4px 0;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .container {

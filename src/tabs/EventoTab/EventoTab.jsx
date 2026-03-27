@@ -22,7 +22,9 @@ import {
   agregarInvitado,
   eliminarInvitado,
   resetearAsignadoAt,
+  getCartonesTrackIds,
 } from '../../utils/supabaseEvento'
+import { imprimirCartones } from '../../utils/imprimirCartones'
 import styles from './EventoTab.module.css'
 
 const MEDAL = ['🥇', '🥈', '🥉']
@@ -89,6 +91,12 @@ export function EventoTab() {
   const [mostrandoFormNuevo, setMostrandoFormNuevo] = useState(false)
   const [formNuevo, setFormNuevo] = useState({ nombre: '', apellido: '', cartonId: '' })
   const [loadingFormNuevo, setLoadingFormNuevo] = useState(false)
+
+  // Impresión
+  const [seleccionados, setSeleccionados] = useState(new Set())
+  const [modalImprimir, setModalImprimir] = useState(false)
+  const [progresoImprimir, setProgresoImprimir] = useState('')
+  const [generandoPDF, setGenerandoPDF] = useState(false)
 
   useEffect(() => {
     async function cargarDatos() {
@@ -374,6 +382,40 @@ export function EventoTab() {
       setError('Error al agregar el invitado')
     } finally {
       setLoadingFormNuevo(false)
+    }
+  }
+
+  async function handleGenerarPDF() {
+    setGenerandoPDF(true)
+    try {
+      const invSeleccionados = filteredInvitados.filter((inv) => seleccionados.has(inv.id))
+      const idsConCarton = invSeleccionados.filter((inv) => inv.carton_id).map((inv) => inv.carton_id)
+      const cartonesData = await getCartonesTrackIds(idsConCarton)
+      const trackMap = Object.fromEntries(cartonesData.map((c) => [c.id, c]))
+
+      const cartones = invSeleccionados
+        .filter((inv) => inv.carton_id && trackMap[inv.carton_id])
+        .map((inv) => {
+          const carton = trackMap[inv.carton_id]
+          const trackObjs = (carton.track_ids ?? []).map(
+            (tid) => tracks.find((t) => t.id === tid) ?? { name: tid, artist: '' }
+          )
+          return {
+            numero: carton.numero,
+            nombre: inv.nombre,
+            apellido: inv.apellido,
+            tracks: trackObjs,
+          }
+        })
+
+      await imprimirCartones(cartones, setProgresoImprimir)
+      setModalImprimir(false)
+      setSeleccionados(new Set())
+    } catch (err) {
+      setError(err?.message ?? 'Error al generar el PDF')
+    } finally {
+      setGenerandoPDF(false)
+      setProgresoImprimir('')
     }
   }
 
@@ -722,15 +764,56 @@ export function EventoTab() {
                     <p className={styles.hint}>No hay invitados cargados</p>
                   ) : (
                     <>
-                      <input
-                        className={styles.buscadorInv}
-                        placeholder="🔍 buscar invitado..."
-                        value={buscadorInv}
-                        onChange={(e) => setBuscadorInv(e.target.value)}
-                      />
+                      {/* ── Barra de acciones de impresión ── */}
+                      <div className={styles.printBar}>
+                        <label className={styles.selectAllLabel}>
+                          <input
+                            type="checkbox"
+                            checked={
+                              filteredInvitados.length > 0 &&
+                              filteredInvitados.every((inv) => seleccionados.has(inv.id))
+                            }
+                            ref={(el) => {
+                              if (el) {
+                                el.indeterminate =
+                                  filteredInvitados.some((inv) => seleccionados.has(inv.id)) &&
+                                  !filteredInvitados.every((inv) => seleccionados.has(inv.id))
+                              }
+                            }}
+                            onChange={(e) => {
+                              setSeleccionados((prev) => {
+                                const next = new Set(prev)
+                                if (e.target.checked) {
+                                  filteredInvitados.forEach((inv) => next.add(inv.id))
+                                } else {
+                                  filteredInvitados.forEach((inv) => next.delete(inv.id))
+                                }
+                                return next
+                              })
+                            }}
+                          />
+                          Seleccionar todos
+                        </label>
+                        <button
+                          className={styles.printBtn}
+                          disabled={seleccionados.size === 0}
+                          onClick={() => setModalImprimir(true)}
+                        >
+                          🖨️ Imprimir seleccionados
+                        </button>
+                        <input
+                          className={styles.buscadorInv}
+                          style={{ flex: 1, minWidth: 120 }}
+                          placeholder="🔍 buscar..."
+                          value={buscadorInv}
+                          onChange={(e) => setBuscadorInv(e.target.value)}
+                        />
+                      </div>
+
                       <table className={styles.table}>
                         <thead>
                           <tr>
+                            <th className={styles.checkCell}></th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>Cartón</th>
@@ -742,6 +825,20 @@ export function EventoTab() {
                           {filteredInvitados.map((inv) => (
                             <>
                               <tr key={inv.id}>
+                                <td className={styles.checkCell}>
+                                  <input
+                                    type="checkbox"
+                                    checked={seleccionados.has(inv.id)}
+                                    onChange={(e) => {
+                                      setSeleccionados((prev) => {
+                                        const next = new Set(prev)
+                                        if (e.target.checked) next.add(inv.id)
+                                        else next.delete(inv.id)
+                                        return next
+                                      })
+                                    }}
+                                  />
+                                </td>
                                 <td>{inv.nombre}</td>
                                 <td>{inv.apellido}</td>
                                 <td>{inv.carton_id ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}` : '—'}</td>
@@ -810,7 +907,7 @@ export function EventoTab() {
                               </tr>
                               {editandoId === inv.id && (
                                 <tr key={`edit-${inv.id}`} className={styles.editRow}>
-                                  <td colSpan={5}>
+                                  <td colSpan={6}>
                                     <div className={styles.editInline}>
                                       <span className={styles.hint}>
                                         Cartón actual: {inv.carton_id ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}` : 'Sin asignar'}
@@ -851,6 +948,43 @@ export function EventoTab() {
           </div>
         )}
       </section>
+
+      {/* ── Modal: confirmar impresión ─────────────────────────────────────── */}
+      {modalImprimir && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            {generandoPDF ? (
+              <p className={styles.progresoImprimir}>{progresoImprimir || 'Preparando...'}</p>
+            ) : (
+              <>
+                <p className={styles.modalTitle}>
+                  ¿Imprimir {seleccionados.size} {seleccionados.size === 1 ? 'cartón' : 'cartones'}?
+                </p>
+                <ul className={styles.modalList}>
+                  {filteredInvitados
+                    .filter((inv) => seleccionados.has(inv.id))
+                    .map((inv) => (
+                      <li key={inv.id}>
+                        {inv.carton_id
+                          ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}`
+                          : '—'}{' '}
+                        · {inv.nombre} {inv.apellido}
+                      </li>
+                    ))}
+                </ul>
+                <div className={styles.modalActions}>
+                  <button className={styles.cancelBtn} onClick={() => setModalImprimir(false)}>
+                    Cancelar
+                  </button>
+                  <button className={styles.primaryBtn} onClick={handleGenerarPDF}>
+                    Generar PDF
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

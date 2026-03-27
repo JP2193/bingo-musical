@@ -131,6 +131,15 @@ function normalizarStr(str = '') {
   return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
 }
 
+export async function getCartonesTrackIds(cartonIds) {
+  const { data, error } = await supabase
+    .from('cartones')
+    .select('id, numero, track_ids')
+    .in('id', cartonIds)
+  if (error) throw error
+  return data ?? []
+}
+
 export async function getInvitados(playlistId) {
   const { data, error } = await supabase
     .from('invitados')
