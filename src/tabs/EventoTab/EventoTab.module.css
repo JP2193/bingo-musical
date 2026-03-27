@@ -438,6 +438,132 @@
   transition: width 0.3s ease;
 }
 
+/* ─── Invitados ──────────────────────────────────────────────────────────────── */
+.invSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.invSection:last-child {
+  border-bottom: none;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: monospace;
+  background: var(--surface2);
+  color: var(--white);
+  border: 1px solid #333;
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.textarea:focus {
+  border-color: var(--yellow);
+}
+
+.confirmBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 80, 80, 0.06);
+  border: 1px solid rgba(255, 80, 80, 0.2);
+}
+
+.buscadorInv {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: var(--surface2);
+  color: var(--white);
+  border: 1px solid #333;
+  outline: none;
+}
+
+.buscadorInv:focus {
+  border-color: var(--yellow);
+}
+
+.formNuevo {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  padding: 12px;
+  background: var(--surface2);
+  border: 1px solid #333;
+}
+
+.invInput {
+  flex: 1;
+  min-width: 120px;
+  padding: 7px 10px;
+  font-size: 13px;
+  background: var(--surface);
+  color: var(--white);
+  border: 1px solid #333;
+  outline: none;
+}
+
+.invInput:focus {
+  border-color: var(--yellow);
+}
+
+.invSelect {
+  padding: 7px 10px;
+  font-size: 13px;
+  background: var(--surface);
+  color: var(--white);
+  border: 1px solid #333;
+  outline: none;
+  cursor: pointer;
+}
+
+.editRow td {
+  padding: 0 !important;
+}
+
+.editInline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 10px;
+  background: rgba(255, 220, 50, 0.04);
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.iconBtn {
+  background: none;
+  border: 1px solid #333;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.iconBtn:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.dangerIconBtn {
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+}
+
+.badgeGris  { font-size: 11px; color: var(--muted); }
+.badgeAmarillo { font-size: 11px; color: var(--yellow); }
+.badgeVerde { font-size: 11px; color: var(--success); }
+
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .container {

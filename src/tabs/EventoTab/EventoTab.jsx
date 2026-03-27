@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ErrorBanner } from '../../components/UI/ErrorBanner'
 import { generateAllUniqueCards } from '../../utils/bingo'
 import {
@@ -14,10 +14,33 @@ import {
   desactivarCancion,
   resetCancionesCantadas,
   getRankingCartones,
+  getInvitados,
+  getCartonesSobrantes,
+  insertInvitadosBatch,
+  preasignarCartones,
+  cambiarCarton,
+  agregarInvitado,
+  eliminarInvitado,
 } from '../../utils/supabaseEvento'
 import styles from './EventoTab.module.css'
 
 const MEDAL = ['🥇', '🥈', '🥉']
+
+function parsearLista(texto) {
+  return texto
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const [nombre, apellido] = l.split('\t')
+      return { nombre: nombre?.trim() ?? '', apellido: apellido?.trim() ?? '' }
+    })
+    .filter((inv) => inv.nombre && inv.apellido)
+}
+
+function normalizarStr(str = '') {
+  return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+}
 
 export function EventoTab() {
   const [playlists, setPlaylists] = useState([])
@@ -46,6 +69,23 @@ export function EventoTab() {
   const [loadingEstado, setLoadingEstado] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
 
+  // Invitados
+  const [invitados, setInvitados] = useState([])
+  const [cartonesSobrantes, setCartonesSobrantes] = useState([])
+  const [loadingInvitados, setLoadingInvitados] = useState(false)
+  const [txtLista, setTxtLista] = useState('')
+  const [loadingCarga, setLoadingCarga] = useState(false)
+  const [confirmReemplazar, setConfirmReemplazar] = useState(false)
+  const [loadingPreasignar, setLoadingPreasignar] = useState(false)
+  const [progresoPreasignar, setProgresoPreasignar] = useState('')
+  const [buscadorInv, setBuscadorInv] = useState('')
+  const [editandoId, setEditandoId] = useState(null)
+  const [nuevoCartonId, setNuevoCartonId] = useState('')
+  const [confirmEliminarId, setConfirmEliminarId] = useState(null)
+  const [mostrandoFormNuevo, setMostrandoFormNuevo] = useState(false)
+  const [formNuevo, setFormNuevo] = useState({ nombre: '', apellido: '', cartonId: '' })
+  const [loadingFormNuevo, setLoadingFormNuevo] = useState(false)
+
   useEffect(() => {
     async function cargarDatos() {
       try {
@@ -70,6 +110,8 @@ export function EventoTab() {
     setCantadas(new Set())
     setRanking(null)
     setEstado(null)
+    setInvitados([])
+    setCartonesSobrantes([])
     try {
       await setPlaylistActiva(id)
     } catch {
@@ -91,7 +133,7 @@ export function EventoTab() {
       const ids = generateAllUniqueCards(tracks, 3, 5, cantidad)
       await deleteCartonesByPlaylist(playlistActivaId)
       const cartones = ids.map((track_ids, i) => ({ numero: i + 1, playlist_id: playlistActivaId, track_ids }))
-      await insertCartonesBatch(cartones, (insertados, total) => setProgreso({ insertados, total }))
+      await insertCartonesBatch(cartones, (ins, total) => setProgreso({ insertados: ins, total }))
       setExito(`✓ ${cantidad} cartones listos para el evento`)
       setProgreso(null)
     } catch {
@@ -108,8 +150,7 @@ export function EventoTab() {
     if (!playlistActivaId) return
     setLoadingCanciones(true)
     try {
-      const set = await getCancionesCantadas(playlistActivaId)
-      setCantadas(set)
+      setCantadas(await getCancionesCantadas(playlistActivaId))
     } catch {
       setError('Error al cargar canciones cantadas')
     } finally {
@@ -124,8 +165,7 @@ export function EventoTab() {
   async function handleToggleCancion(trackId, isActive) {
     setCantadas((prev) => {
       const next = new Set(prev)
-      if (isActive) next.delete(trackId)
-      else next.add(trackId)
+      if (isActive) next.delete(trackId); else next.add(trackId)
       return next
     })
     try {
@@ -134,8 +174,7 @@ export function EventoTab() {
     } catch {
       setCantadas((prev) => {
         const next = new Set(prev)
-        if (isActive) next.add(trackId)
-        else next.delete(trackId)
+        if (isActive) next.add(trackId); else next.delete(trackId)
         return next
       })
       setError('Error al actualizar la canción')
@@ -159,8 +198,7 @@ export function EventoTab() {
     if (!playlistActivaId) return
     setLoadingRanking(true)
     try {
-      const data = await getRankingCartones(playlistActivaId)
-      setRanking(data)
+      setRanking(await getRankingCartones(playlistActivaId))
     } catch {
       setError('Error al cargar el ranking')
     } finally {
@@ -182,8 +220,7 @@ export function EventoTab() {
     if (!playlistActivaId) return
     setLoadingEstado(true)
     try {
-      const data = await getEstadoEvento(playlistActivaId)
-      setEstado(data)
+      setEstado(await getEstadoEvento(playlistActivaId))
     } catch {
       setError('Error al cargar el estado del evento')
     } finally {
@@ -207,6 +244,121 @@ export function EventoTab() {
     }
   }
 
+  // ── Invitados ─────────────────────────────────────────────────────────────────
+
+  const handleCargarInvitados = useCallback(async () => {
+    if (!playlistActivaId) return
+    setLoadingInvitados(true)
+    try {
+      const [lista, sobrantes] = await Promise.all([
+        getInvitados(playlistActivaId),
+        getCartonesSobrantes(playlistActivaId),
+      ])
+      setInvitados(lista)
+      setCartonesSobrantes(sobrantes)
+    } catch {
+      setError('Error al cargar invitados')
+    } finally {
+      setLoadingInvitados(false)
+    }
+  }, [playlistActivaId])
+
+  useEffect(() => {
+    if (subTab === 'invitados' && playlistActivaId) handleCargarInvitados()
+  }, [subTab, playlistActivaId, handleCargarInvitados])
+
+  const filteredInvitados = useMemo(() => {
+    if (!buscadorInv.trim()) return invitados
+    const q = normalizarStr(buscadorInv)
+    return invitados.filter(
+      (inv) => normalizarStr(inv.nombre).includes(q) || normalizarStr(inv.apellido).includes(q)
+    )
+  }, [invitados, buscadorInv])
+
+  async function handleCargarLista() {
+    const lista = parsearLista(txtLista)
+    if (!lista.length) { setError('La lista está vacía o tiene un formato incorrecto'); return }
+    if (invitados.length > 0) { setConfirmReemplazar(true); return }
+    await ejecutarCargaLista(lista)
+  }
+
+  async function ejecutarCargaLista(lista) {
+    setLoadingCarga(true)
+    setConfirmReemplazar(false)
+    try {
+      await insertInvitadosBatch(lista, playlistActivaId)
+      setTxtLista('')
+      setExito(`✓ ${lista.length} invitados cargados`)
+      await handleCargarInvitados()
+    } catch {
+      setError('Error al cargar la lista')
+    } finally {
+      setLoadingCarga(false)
+    }
+  }
+
+  async function handlePreasignar() {
+    setLoadingPreasignar(true)
+    setProgresoPreasignar('')
+    try {
+      const result = await preasignarCartones(playlistActivaId, (n, total) => {
+        setProgresoPreasignar(`Asignando ${n} de ${total}...`)
+      })
+      setExito(`✓ ${result.asignados} invitados asignados · ${result.sobrantes} cartones sobrantes`)
+      await handleCargarInvitados()
+    } catch (err) {
+      setError(err.message ?? 'Error al pre-asignar cartones')
+    } finally {
+      setLoadingPreasignar(false)
+      setProgresoPreasignar('')
+    }
+  }
+
+  async function handleGuardarCambioCarton(inv) {
+    if (!nuevoCartonId) return
+    try {
+      await cambiarCarton(inv.id, nuevoCartonId, inv.nombre, inv.apellido, inv.carton_id)
+      setEditandoId(null)
+      setNuevoCartonId('')
+      await handleCargarInvitados()
+    } catch {
+      setError('Error al cambiar el cartón')
+    }
+  }
+
+  async function handleEliminarInvitado(inv) {
+    if (confirmEliminarId !== inv.id) { setConfirmEliminarId(inv.id); return }
+    try {
+      await eliminarInvitado(inv.id, inv.carton_id)
+      setConfirmEliminarId(null)
+      await handleCargarInvitados()
+    } catch {
+      setError('Error al eliminar el invitado')
+    }
+  }
+
+  async function handleAgregarInvitado() {
+    const { nombre, apellido, cartonId } = formNuevo
+    if (!nombre.trim() || !apellido.trim()) { setError('Nombre y apellido son obligatorios'); return }
+    setLoadingFormNuevo(true)
+    try {
+      await agregarInvitado(nombre.trim(), apellido.trim(), playlistActivaId, cartonId || null)
+      setFormNuevo({ nombre: '', apellido: '', cartonId: '' })
+      setMostrandoFormNuevo(false)
+      await handleCargarInvitados()
+    } catch {
+      setError('Error al agregar el invitado')
+    } finally {
+      setLoadingFormNuevo(false)
+    }
+  }
+
+  function badgeInvitado(inv) {
+    if (!inv.carton_id) return <span className={styles.badgeGris}>⚪ Sin cartón</span>
+    if (!inv.asignado_at) return <span className={styles.badgeAmarillo}>🟡 Asignado</span>
+    return <span className={styles.badgeVerde}>🟢 Activo</span>
+  }
+
   return (
     <div className={styles.container}>
       <ErrorBanner message={error} onDismiss={() => setError('')} />
@@ -214,14 +366,12 @@ export function EventoTab() {
       {/* ── Sección 1: Playlist activa ─────────────────────────────────────── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Playlist activa</h2>
-
         <select className={styles.select} value={playlistActivaId} onChange={handleCambiarPlaylist}>
           <option value="">— Seleccioná una playlist —</option>
           {playlists.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
-
         {playlistActiva && (
           <div className={styles.playlistInfo}>
             <span className={styles.playlistName}>{playlistActiva.name}</span>
@@ -235,7 +385,6 @@ export function EventoTab() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Generar cartones</h2>
         <p className={styles.hint}>Se generarán cartones de 3×5 (15 temas por cartón)</p>
-
         <div className={styles.inputRow}>
           <label className={styles.label}>Cantidad de cartones</label>
           <div className={styles.stepper}>
@@ -254,10 +403,8 @@ export function EventoTab() {
             <button type="button" className={styles.stepBtn} onClick={() => setCantidad((c) => Math.min(500, c + 10))}>+</button>
           </div>
         </div>
-
         {progreso && <p className={styles.progreso}>Generando {progreso.insertados} de {progreso.total}...</p>}
         {exito && <p className={styles.exitoMsg}>{exito}</p>}
-
         <button className={styles.primaryBtn} onClick={handleGenerarCartones} disabled={generando}>
           {generando ? 'Generando...' : '🎲 Generar cartones para el evento'}
         </button>
@@ -272,6 +419,7 @@ export function EventoTab() {
             { id: 'canciones', label: 'Canciones' },
             { id: 'ranking',   label: 'Ranking' },
             { id: 'cartones',  label: 'Cartones' },
+            { id: 'invitados', label: 'Invitados' },
           ].map((t) => (
             <button
               key={t.id}
@@ -303,7 +451,6 @@ export function EventoTab() {
                 )}
               </div>
             </div>
-
             {!playlistActivaId ? (
               <p className={styles.hint}>Seleccioná una playlist primero</p>
             ) : tracks.length === 0 ? (
@@ -338,15 +485,10 @@ export function EventoTab() {
           <div className={styles.subTabContent}>
             <div className={styles.sectionHeader}>
               <span className={styles.hint}>Se actualiza cada 10 seg</span>
-              <button
-                className={styles.secondaryBtn}
-                onClick={handleCargarRanking}
-                disabled={loadingRanking || !playlistActivaId}
-              >
+              <button className={styles.secondaryBtn} onClick={handleCargarRanking} disabled={loadingRanking || !playlistActivaId}>
                 🔄 Actualizar
               </button>
             </div>
-
             {!playlistActivaId ? (
               <p className={styles.hint}>Seleccioná una playlist primero</p>
             ) : !ranking ? (
@@ -405,7 +547,6 @@ export function EventoTab() {
                 )}
               </div>
             </div>
-
             {!estado ? (
               <p className={styles.hint}>
                 {playlistActivaId ? 'Hacé clic en Actualizar para ver el estado' : 'Seleccioná una playlist primero'}
@@ -413,46 +554,232 @@ export function EventoTab() {
             ) : (
               <>
                 <div className={styles.statsRow}>
-                  <div className={styles.stat}>
-                    <span className={styles.statValue}>{estado.total}</span>
-                    <span className={styles.statLabel}>Total</span>
-                  </div>
-                  <div className={styles.stat}>
-                    <span className={styles.statValue}>{estado.entregados}</span>
-                    <span className={styles.statLabel}>Entregados</span>
-                  </div>
-                  <div className={styles.stat}>
-                    <span className={styles.statValue}>{estado.disponibles}</span>
-                    <span className={styles.statLabel}>Disponibles</span>
-                  </div>
+                  <div className={styles.stat}><span className={styles.statValue}>{estado.total}</span><span className={styles.statLabel}>Total</span></div>
+                  <div className={styles.stat}><span className={styles.statValue}>{estado.entregados}</span><span className={styles.statLabel}>Entregados</span></div>
+                  <div className={styles.stat}><span className={styles.statValue}>{estado.disponibles}</span><span className={styles.statLabel}>Disponibles</span></div>
                 </div>
-
                 {estado.lista.filter((c) => c.entregado).length > 0 && (
                   <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Invitado</th>
-                        <th>Hora</th>
-                      </tr>
-                    </thead>
+                    <thead><tr><th>#</th><th>Invitado</th><th>Hora</th></tr></thead>
                     <tbody>
-                      {estado.lista
-                        .filter((c) => c.entregado)
-                        .map((c) => (
-                          <tr key={c.id}>
-                            <td>{c.numero}</td>
-                            <td>{c.nombre_invitado ?? '—'}</td>
-                            <td>
-                              {c.entregado_at
-                                ? new Date(c.entregado_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-                                : '—'}
-                            </td>
-                          </tr>
-                        ))}
+                      {estado.lista.filter((c) => c.entregado).map((c) => (
+                        <tr key={c.id}>
+                          <td>{c.numero}</td>
+                          <td>{c.nombre_invitado ?? '—'}</td>
+                          <td>{c.entregado_at ? new Date(c.entregado_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── Sub-tab: Invitados ──────────────────────────────────────────── */}
+        {subTab === 'invitados' && (
+          <div className={styles.subTabContent}>
+            {!playlistActivaId ? (
+              <p className={styles.hint}>Seleccioná una playlist primero</p>
+            ) : (
+              <>
+                {/* ── Carga masiva ── */}
+                <div className={styles.invSection}>
+                  <p className={styles.label}>Cargar lista (TSV: Nombre↹Apellido)</p>
+                  <textarea
+                    className={styles.textarea}
+                    placeholder={'Laura\tDesmaras Luzuriaga\nGarlo\tDesmaras Luzuriaga'}
+                    value={txtLista}
+                    onChange={(e) => setTxtLista(e.target.value)}
+                    rows={5}
+                  />
+                  {confirmReemplazar && (
+                    <div className={styles.confirmBox}>
+                      <p className={styles.hint}>Ya hay {invitados.length} invitados. ¿Reemplazar la lista?</p>
+                      <div className={styles.actionRow}>
+                        <button
+                          className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
+                          onClick={() => ejecutarCargaLista(parsearLista(txtLista))}
+                          disabled={loadingCarga}
+                        >
+                          Reemplazar
+                        </button>
+                        <button className={styles.cancelBtn} onClick={() => setConfirmReemplazar(false)}>Cancelar</button>
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    className={styles.secondaryBtn}
+                    onClick={handleCargarLista}
+                    disabled={loadingCarga || !txtLista.trim()}
+                  >
+                    {loadingCarga ? 'Cargando...' : 'Cargar lista'}
+                  </button>
+                </div>
+
+                {/* ── Pre-asignación ── */}
+                <div className={styles.invSection}>
+                  <div className={styles.sectionHeader}>
+                    <div>
+                      <p className={styles.label}>Pre-asignar cartones</p>
+                      <p className={styles.hint}>Se asignan en el mismo orden que la lista</p>
+                    </div>
+                    <button
+                      className={styles.secondaryBtn}
+                      onClick={handlePreasignar}
+                      disabled={loadingPreasignar || !invitados.length}
+                    >
+                      {loadingPreasignar ? progresoPreasignar || 'Asignando...' : 'Pre-asignar cartones'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── Tabla ── */}
+                <div className={styles.invSection}>
+                  <div className={styles.sectionHeader}>
+                    <p className={styles.label}>{invitados.length} invitados</p>
+                    <button
+                      className={styles.secondaryBtn}
+                      onClick={() => { setMostrandoFormNuevo((v) => !v); setFormNuevo({ nombre: '', apellido: '', cartonId: '' }) }}
+                    >
+                      {mostrandoFormNuevo ? 'Cancelar' : '+ Agregar'}
+                    </button>
+                  </div>
+
+                  {mostrandoFormNuevo && (
+                    <div className={styles.formNuevo}>
+                      <input
+                        className={styles.invInput}
+                        placeholder="Nombre"
+                        value={formNuevo.nombre}
+                        onChange={(e) => setFormNuevo((f) => ({ ...f, nombre: e.target.value }))}
+                      />
+                      <input
+                        className={styles.invInput}
+                        placeholder="Apellido"
+                        value={formNuevo.apellido}
+                        onChange={(e) => setFormNuevo((f) => ({ ...f, apellido: e.target.value }))}
+                      />
+                      <select
+                        className={styles.invSelect}
+                        value={formNuevo.cartonId}
+                        onChange={(e) => setFormNuevo((f) => ({ ...f, cartonId: e.target.value }))}
+                      >
+                        <option value="">Sin cartón</option>
+                        {cartonesSobrantes.map((c) => (
+                          <option key={c.id} value={c.id}>#{String(c.numero).padStart(3, '0')}</option>
+                        ))}
+                      </select>
+                      <button className={styles.primaryBtn} onClick={handleAgregarInvitado} disabled={loadingFormNuevo}>
+                        {loadingFormNuevo ? 'Guardando...' : 'Agregar'}
+                      </button>
+                    </div>
+                  )}
+
+                  {loadingInvitados ? (
+                    <p className={styles.hint}>Cargando...</p>
+                  ) : invitados.length === 0 ? (
+                    <p className={styles.hint}>No hay invitados cargados</p>
+                  ) : (
+                    <>
+                      <input
+                        className={styles.buscadorInv}
+                        placeholder="🔍 buscar invitado..."
+                        value={buscadorInv}
+                        onChange={(e) => setBuscadorInv(e.target.value)}
+                      />
+                      <table className={styles.table}>
+                        <thead>
+                          <tr>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Cartón</th>
+                            <th>Estado</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredInvitados.map((inv) => (
+                            <>
+                              <tr key={inv.id}>
+                                <td>{inv.nombre}</td>
+                                <td>{inv.apellido}</td>
+                                <td>{inv.carton_id ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}` : '—'}</td>
+                                <td>{badgeInvitado(inv)}</td>
+                                <td>
+                                  <div className={styles.actionRow}>
+                                    <button
+                                      className={styles.iconBtn}
+                                      onClick={() => {
+                                        setEditandoId(editandoId === inv.id ? null : inv.id)
+                                        setNuevoCartonId('')
+                                        setConfirmEliminarId(null)
+                                      }}
+                                      title="Cambiar cartón"
+                                    >✏</button>
+                                    {confirmEliminarId === inv.id ? (
+                                      <>
+                                        <button
+                                          className={`${styles.iconBtn} ${styles.dangerIconBtn}`}
+                                          onClick={() => handleEliminarInvitado(inv)}
+                                        >Sí</button>
+                                        <button
+                                          className={styles.iconBtn}
+                                          onClick={() => setConfirmEliminarId(null)}
+                                        >No</button>
+                                      </>
+                                    ) : (
+                                      <button
+                                        className={styles.iconBtn}
+                                        onClick={() => {
+                                          setConfirmEliminarId(inv.id)
+                                          setEditandoId(null)
+                                        }}
+                                        title={`Eliminar ${inv.nombre}`}
+                                      >🗑</button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                              {editandoId === inv.id && (
+                                <tr key={`edit-${inv.id}`} className={styles.editRow}>
+                                  <td colSpan={5}>
+                                    <div className={styles.editInline}>
+                                      <span className={styles.hint}>
+                                        Cartón actual: {inv.carton_id ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}` : 'Sin asignar'}
+                                      </span>
+                                      <select
+                                        className={styles.invSelect}
+                                        value={nuevoCartonId}
+                                        onChange={(e) => setNuevoCartonId(e.target.value)}
+                                      >
+                                        <option value="">— Seleccioná un cartón —</option>
+                                        {cartonesSobrantes.map((c) => (
+                                          <option key={c.id} value={c.id}>#{String(c.numero).padStart(3, '0')}</option>
+                                        ))}
+                                      </select>
+                                      <button
+                                        className={styles.secondaryBtn}
+                                        onClick={() => handleGuardarCambioCarton(inv)}
+                                        disabled={!nuevoCartonId}
+                                      >
+                                        Guardar cambio
+                                      </button>
+                                      <button className={styles.cancelBtn} onClick={() => setEditandoId(null)}>
+                                        Cancelar
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
+                  )}
+                </div>
               </>
             )}
           </div>
