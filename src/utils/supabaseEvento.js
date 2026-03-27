@@ -79,3 +79,63 @@ export async function resetEvento(playlistId) {
     .eq('playlist_id', playlistId)
   if (error) throw error
 }
+
+export async function getCancionesCantadas(playlistId) {
+  const { data, error } = await supabase
+    .from('canciones_cantadas')
+    .select('track_id')
+    .eq('playlist_id', playlistId)
+  if (error) throw error
+  return new Set(data.map((c) => c.track_id))
+}
+
+export async function activarCancion(playlistId, trackId) {
+  const { error } = await supabaseAdmin
+    .from('canciones_cantadas')
+    .insert({ playlist_id: playlistId, track_id: trackId })
+  if (error) throw error
+}
+
+export async function desactivarCancion(playlistId, trackId) {
+  const { error } = await supabaseAdmin
+    .from('canciones_cantadas')
+    .delete()
+    .eq('playlist_id', playlistId)
+    .eq('track_id', trackId)
+  if (error) throw error
+}
+
+export async function resetCancionesCantadas(playlistId) {
+  const { error } = await supabaseAdmin
+    .from('canciones_cantadas')
+    .delete()
+    .eq('playlist_id', playlistId)
+  if (error) throw error
+}
+
+export async function getRankingCartones(playlistId) {
+  const [{ data: cantadas, error: e1 }, { data: cartones, error: e2 }] = await Promise.all([
+    supabase.from('canciones_cantadas').select('track_id').eq('playlist_id', playlistId),
+    supabase
+      .from('cartones')
+      .select('numero, nombre_invitado, track_ids')
+      .eq('playlist_id', playlistId)
+      .eq('entregado', true),
+  ])
+  if (e1) throw e1
+  if (e2) throw e2
+
+  const cantadasSet = new Set(cantadas.map((c) => c.track_id))
+  return cartones
+    .map((c) => {
+      const tachadas = c.track_ids.filter((id) => cantadasSet.has(id)).length
+      return {
+        numero: c.numero,
+        nombre: c.nombre_invitado,
+        tachadas,
+        total: c.track_ids.length,
+        pct: Math.round((tachadas / c.track_ids.length) * 100),
+      }
+    })
+    .sort((a, b) => b.tachadas - a.tachadas)
+}
