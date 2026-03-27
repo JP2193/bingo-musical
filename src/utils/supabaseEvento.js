@@ -55,20 +55,34 @@ export async function insertCartonesBatch(cartones, onProgress) {
 }
 
 export async function getEstadoEvento(playlistId) {
-  const { data, error } = await supabase
-    .from('cartones')
-    .select('id, numero, nombre_invitado, entregado, entregado_at')
-    .eq('playlist_id', playlistId)
-    .order('numero', { ascending: true })
-  if (error) throw error
+  const [{ data: cartones, error: e1 }, { data: invitados, error: e2 }] = await Promise.all([
+    supabase
+      .from('cartones')
+      .select('id, numero')
+      .eq('playlist_id', playlistId),
+    supabase
+      .from('invitados')
+      .select('id, nombre, apellido, carton_id, asignado_at, cartones(numero)')
+      .eq('playlist_id', playlistId)
+      .not('asignado_at', 'is', null)
+      .order('asignado_at', { ascending: true }),
+  ])
+  if (e1) throw e1
+  if (e2) throw e2
 
-  const total = data.length
-  const entregados = data.filter((c) => c.entregado).length
+  const total = cartones.length
+  const entregados = invitados.length
   return {
     total,
     entregados,
     disponibles: total - entregados,
-    lista: data,
+    lista: invitados.map((inv) => ({
+      id: inv.id,
+      numero: inv.cartones?.numero ?? '?',
+      nombre_invitado: `${inv.nombre} ${inv.apellido}`,
+      entregado: true,
+      entregado_at: inv.asignado_at,
+    })),
   }
 }
 
@@ -250,27 +264,28 @@ export async function eliminarInvitado(invitadoId, cartonId) {
 }
 
 export async function getRankingCartones(playlistId) {
-  const [{ data: cantadas, error: e1 }, { data: cartones, error: e2 }] = await Promise.all([
+  const [{ data: cantadas, error: e1 }, { data: invitados, error: e2 }] = await Promise.all([
     supabase.from('canciones_cantadas').select('track_id').eq('playlist_id', playlistId),
     supabase
-      .from('cartones')
-      .select('numero, nombre_invitado, track_ids')
+      .from('invitados')
+      .select('nombre, apellido, cartones(numero, track_ids)')
       .eq('playlist_id', playlistId)
-      .eq('entregado', true),
+      .not('asignado_at', 'is', null),
   ])
   if (e1) throw e1
   if (e2) throw e2
 
   const cantadasSet = new Set(cantadas.map((c) => c.track_id))
-  return cartones
-    .map((c) => {
-      const tachadas = c.track_ids.filter((id) => cantadasSet.has(id)).length
+  return invitados
+    .filter((inv) => inv.cartones?.track_ids)
+    .map((inv) => {
+      const tachadas = inv.cartones.track_ids.filter((id) => cantadasSet.has(id)).length
       return {
-        numero: c.numero,
-        nombre: c.nombre_invitado,
+        numero: inv.cartones.numero,
+        nombre: `${inv.nombre} ${inv.apellido}`,
         tachadas,
-        total: c.track_ids.length,
-        pct: Math.round((tachadas / c.track_ids.length) * 100),
+        total: inv.cartones.track_ids.length,
+        pct: Math.round((tachadas / inv.cartones.track_ids.length) * 100),
       }
     })
     .sort((a, b) => b.tachadas - a.tachadas)
