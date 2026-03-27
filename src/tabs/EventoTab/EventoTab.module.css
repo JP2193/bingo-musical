@@ -101,15 +101,48 @@
   white-space: nowrap;
 }
 
+.stepper {
+  display: flex;
+  align-items: center;
+}
+
+.stepBtn {
+  width: 34px;
+  height: 34px;
+  background: var(--surface2);
+  border: 1px solid #333;
+  color: var(--white);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition);
+  flex-shrink: 0;
+}
+
+.stepBtn:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
 .numberInput {
-  width: 90px;
-  padding: 8px 10px;
+  width: 70px;
+  height: 34px;
+  padding: 0 6px;
   font-size: 14px;
   text-align: center;
   background: var(--surface2);
   color: var(--white);
   border: 1px solid #333;
+  border-left: none;
+  border-right: none;
   outline: none;
+  -moz-appearance: textfield;
+}
+
+.numberInput::-webkit-outer-spin-button,
+.numberInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .numberInput:focus {

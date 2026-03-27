@@ -161,14 +161,29 @@ export function EventoTab() {
 
         <div className={styles.inputRow}>
           <label className={styles.label}>Cantidad de cartones</label>
-          <input
-            type="number"
-            className={styles.numberInput}
-            value={cantidad}
-            min={10}
-            max={500}
-            onChange={(e) => setCantidad(Math.max(10, Math.min(500, Number(e.target.value))))}
-          />
+          <div className={styles.stepper}>
+            <button
+              type="button"
+              className={styles.stepBtn}
+              onClick={() => setCantidad(c => Math.max(10, c - 10))}
+            >−</button>
+            <input
+              type="number"
+              className={styles.numberInput}
+              value={cantidad}
+              min={10}
+              max={500}
+              onChange={(e) => {
+                const v = Number(e.target.value)
+                if (!isNaN(v)) setCantidad(Math.max(10, Math.min(500, v)))
+              }}
+            />
+            <button
+              type="button"
+              className={styles.stepBtn}
+              onClick={() => setCantidad(c => Math.min(500, c + 10))}
+            >+</button>
+          </div>
         </div>
 
         {progreso && (
