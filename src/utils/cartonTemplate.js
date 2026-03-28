@@ -29,7 +29,7 @@ export const CARTON_CSS = `
   }
   .cp-header {
     text-align: center;
-    margin-bottom: 2mm;
+    margin-bottom: 4mm;
     flex-shrink: 0;
   }
   .cp-titulo {
@@ -52,7 +52,7 @@ export const CARTON_CSS = `
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 2mm;
+    margin-bottom: 4mm;
     flex-shrink: 0;
   }
   .cp-sep-linea {
@@ -72,7 +72,14 @@ export const CARTON_CSS = `
     gap: 2mm;
   }
   .cp-carton--vertical .cp-grid {
-    max-height: 128mm;
+    max-height: 144mm;
+    row-gap: 6mm;
+  }
+  .cp-carton--vertical .cp-header {
+    margin-bottom: 6mm;
+  }
+  .cp-carton--vertical .cp-sep {
+    margin-bottom: 6mm;
   }
   .cp-celda {
     border: 1px solid rgba(212, 188, 148, 0.45);

@@ -62,7 +62,7 @@
   /* ── cp-header ─────────────────────────── */
   .cp-header {
     text-align: center;
-    margin-bottom: 2mm;
+    margin-bottom: 4mm;
     flex-shrink: 0;
   }
 
@@ -89,7 +89,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 2mm;
+    margin-bottom: 4mm;
     flex-shrink: 0;
   }
 
@@ -113,9 +113,17 @@
     gap: 2mm;
   }
 
-  /* ── vertical (4×4 portrait): limitar alto del grid para celdas más cuadradas */
+  /* ── vertical (4×4 portrait) ────────────────────────────────────────────── */
+  /* row-gap 6mm + max-height 144mm → celdas cuadradas de ~31.5mm */
   .cp-carton--vertical .cp-grid {
-    max-height: 128mm;
+    max-height: 144mm;
+    row-gap: 6mm;
+  }
+  .cp-carton--vertical .cp-header {
+    margin-bottom: 6mm;
+  }
+  .cp-carton--vertical .cp-sep {
+    margin-bottom: 6mm;
   }
 
   /* ── cp-celda ──────────────────────────── */
