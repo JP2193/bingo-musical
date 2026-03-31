@@ -21,7 +21,7 @@ export async function getPlaylistActiva() {
 }
 
 export async function setPlaylistActiva(playlistId) {
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('config')
     .update({ value: playlistId, updated_at: new Date().toISOString() })
     .eq('key', 'playlist_activa')
