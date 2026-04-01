@@ -25,7 +25,7 @@ export const CARTON_CSS = `
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 3mm 8mm 6mm;
+    padding: 3mm 4mm 6mm;
     min-height: 0;
   }
   .cp-header {
@@ -41,6 +41,7 @@ export const CARTON_CSS = `
     color: #6b4410;
     letter-spacing: 2px;
     line-height: 1;
+    margin-top: 1px;
   }
   .cp-numero {
     font-family: 'Jost', sans-serif;
@@ -48,6 +49,7 @@ export const CARTON_CSS = `
     color: #7a6858;
     letter-spacing: 1px;
     margin-top: 1mm;
+    margin-bottom: 1px;
   }
   .cp-sep {
     display: flex;
@@ -74,7 +76,6 @@ export const CARTON_CSS = `
   }
   .cp-carton--vertical .cp-grid {
     max-height: 144mm;
-    row-gap: 6mm;
   }
   .cp-carton--vertical .cp-header {
     margin-bottom: 6mm;
@@ -162,7 +163,7 @@ export function ajustarTexto(container) {
     const maxH = celda.clientHeight - 6
     const maxW = celda.clientWidth - 6
 
-    let size = 16
+    let size = 17
     nombre.style.fontSize = size + 'px'
     while ((nombre.scrollWidth > maxW || nombre.scrollHeight > maxH * 0.6) && size > 6) {
       size -= 0.5
