@@ -103,8 +103,8 @@ export async function imprimirCartones(cartones, onProgreso) {
     document.body.removeChild(pageEl)
 
     if (gi > 0) pdf.addPage('a3', orientation)
-    const imgData = canvas.toDataURL('image/png')
-    pdf.addImage(imgData, 'PNG', 0, 0, pageW, pageH)
+    const imgData = canvas.toDataURL('image/jpeg', 0.90)
+    pdf.addImage(imgData, 'JPEG', 0, 0, pageW, pageH)
   }
 
   onProgreso?.('')
