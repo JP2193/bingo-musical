@@ -19,6 +19,7 @@ export const CARTON_CSS = `
     object-position: bottom;
     flex-shrink: 0;
     display: block;
+    filter: contrast(1.15) saturate(1.1);
   }
   .cp-content {
     flex: 1;
@@ -37,14 +38,14 @@ export const CARTON_CSS = `
     font-size: 22pt;
     font-weight: 600;
     font-style: italic;
-    color: #b8935a;
+    color: #6b4410;
     letter-spacing: 2px;
     line-height: 1;
   }
   .cp-numero {
     font-family: 'Jost', sans-serif;
     font-size: 5.5pt;
-    color: #ddd0bc;
+    color: #7a6858;
     letter-spacing: 1px;
     margin-top: 1mm;
   }
@@ -58,13 +59,13 @@ export const CARTON_CSS = `
   .cp-sep-linea {
     flex: 1;
     height: 0.5px;
-    background: #b8935a;
-    opacity: 0.4;
+    background: #8a6830;
+    opacity: 0.8;
   }
   .cp-sep-icono {
-    color: #b8935a;
+    color: #8a6830;
     font-size: 7pt;
-    opacity: 0.7;
+    opacity: 1;
   }
   .cp-grid {
     flex: 1;
@@ -82,7 +83,7 @@ export const CARTON_CSS = `
     margin-bottom: 6mm;
   }
   .cp-celda {
-    border: 1px solid rgba(212, 188, 148, 0.45);
+    border: 1px solid rgba(140, 100, 60, 0.75);
     border-radius: 6px;
     display: flex;
     flex-direction: column;
@@ -95,14 +96,14 @@ export const CARTON_CSS = `
   .cp-nombre {
     font-family: 'Jost', sans-serif;
     font-weight: 600;
-    color: #6b5040;
+    color: #3a2010;
     line-height: 1.25;
     margin-bottom: 2px;
   }
   .cp-artista {
     font-family: 'Jost', sans-serif;
     font-weight: 300;
-    color: #a8917a;
+    color: #5a3e28;
     line-height: 1.2;
   }
 `
