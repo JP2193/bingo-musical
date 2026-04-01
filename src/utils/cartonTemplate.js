@@ -35,7 +35,7 @@ export const CARTON_CSS = `
   }
   .cp-titulo {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 22pt;
+    font-size: 26pt;
     font-weight: 600;
     font-style: italic;
     color: #6b4410;
@@ -44,7 +44,7 @@ export const CARTON_CSS = `
   }
   .cp-numero {
     font-family: 'Jost', sans-serif;
-    font-size: 5.5pt;
+    font-size: 8pt;
     color: #7a6858;
     letter-spacing: 1px;
     margin-top: 1mm;
@@ -144,12 +144,7 @@ export function buildCartonHTML(numero, tracks, is4x4) {
       <div class="cp-content">
         <div class="cp-header">
           <div class="cp-titulo">♪ Bingo Musical ♪</div>
-          <div class="cp-numero">Cartón #${String(numero).padStart(3, '0')}</div>
-        </div>
-        <div class="cp-sep">
-          <div class="cp-sep-linea"></div>
-          <div class="cp-sep-icono">✦</div>
-          <div class="cp-sep-linea"></div>
+          <div class="cp-numero">#${String(numero).padStart(3, '0')}</div>
         </div>
         <div class="cp-grid" style="${gridStyle}">${celdas}</div>
       </div>
