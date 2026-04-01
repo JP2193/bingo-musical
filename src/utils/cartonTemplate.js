@@ -41,7 +41,7 @@ export const CARTON_CSS = `
     color: #6b4410;
     letter-spacing: 2px;
     line-height: 1;
-    margin-top: 1px;
+    margin-top: 4mm;
   }
   .cp-numero {
     font-family: 'Jost', sans-serif;
@@ -49,7 +49,7 @@ export const CARTON_CSS = `
     color: #7a6858;
     letter-spacing: 1px;
     margin-top: 1mm;
-    margin-bottom: 1px;
+    margin-bottom: 4mm;
   }
   .cp-sep {
     display: flex;
