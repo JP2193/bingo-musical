@@ -24,23 +24,27 @@ export async function getPlaylists() {
 // ─── Config: playlist activa ──────────────────────────────────────────────────
 
 export async function getPlaylistActiva() {
-  const { data, error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return ''
+  const { data } = await supabase
     .from('config')
     .select('value')
+    .eq('user_id', user.id)
     .eq('key', 'playlist_activa')
     .maybeSingle()
-  if (error) return ''
   return data?.value ?? ''
 }
 
 export async function setPlaylistActiva(playlistId) {
   const userId = await getUserId()
-  const { error } = await supabase
-    .from('config')
-    .upsert(
-      { user_id: userId, key: 'playlist_activa', value: playlistId, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id,key' }
-    )
+  // Eliminar fila existente del usuario y reinsertar
+  await supabase.from('config').delete().eq('user_id', userId).eq('key', 'playlist_activa')
+  const { error } = await supabase.from('config').insert({
+    user_id: userId,
+    key: 'playlist_activa',
+    value: playlistId,
+    updated_at: new Date().toISOString(),
+  })
   if (error) throw error
 }
 
