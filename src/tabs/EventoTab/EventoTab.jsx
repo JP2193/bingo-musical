@@ -24,6 +24,7 @@ import {
   eliminarInvitadosBatch,
   resetearAsignadoAt,
   toggleOcultoInvitado,
+  actualizarNombreInvitado,
   desasignarCartones,
   getCartonesTrackIds,
 } from '../../utils/supabaseEvento'
@@ -138,15 +139,18 @@ export function EventoTab() {
   const [buscadorInv, setBuscadorInv] = useState('')
   const [editandoId, setEditandoId] = useState(null)
   const [nuevoCartonId, setNuevoCartonId] = useState('')
-  const [confirmEliminarId, setConfirmEliminarId] = useState(null)
+  const [editandoNombreId, setEditandoNombreId] = useState(null)
+  const [formEditarNombre, setFormEditarNombre] = useState({ nombre: '', apellido: '' })
+  const [loadingEditarNombre, setLoadingEditarNombre] = useState(false)
   const [confirmResetearId, setConfirmResetearId] = useState(null)
   const [mostrandoFormNuevo, setMostrandoFormNuevo] = useState(false)
   const [formNuevo, setFormNuevo] = useState({ nombre: '', apellido: '', cartonId: '' })
   const [loadingFormNuevo, setLoadingFormNuevo] = useState(false)
+  const [invMsgExito, setInvMsgExito] = useState('')
 
   // Selección unificada (impresión y eliminación)
   const [selectedInvitados, setSelectedInvitados] = useState(new Set())
-  const [confirmDeleteBatch, setConfirmDeleteBatch] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [loadingDeleteBatch, setLoadingDeleteBatch] = useState(false)
 
 
@@ -344,7 +348,7 @@ export function EventoTab() {
 
   // ─── Invitados ──────────────────────────────────────────────────────────────
 
-  async function handleCargarInvitados() {
+  async function handleCargarInvitados(showSuccess = false) {
     if (!playlistActivaId) return
     setLoadingInvitados(true)
     try {
@@ -354,6 +358,10 @@ export function EventoTab() {
       ])
       setInvitados(inv)
       setCartonesSobrantes(sobrantes)
+      if (showSuccess) {
+        setInvMsgExito('Lista actualizada correctamente')
+        setTimeout(() => setInvMsgExito(''), 3000)
+      }
     } catch (e) {
       setError(e.message)
     } finally {
@@ -368,6 +376,8 @@ export function EventoTab() {
       await handleCargarInvitados()
       setListaImportada([])
       setConfirmReemplazar(false)
+      setInvMsgExito(`${lista.length} invitados importados correctamente`)
+      setTimeout(() => setInvMsgExito(''), 3000)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -454,6 +464,22 @@ export function EventoTab() {
     }
   }
 
+  // ── Editar nombre ───────────────────────────────────────────────────────────
+  async function handleActualizarNombre(inv) {
+    const { nombre, apellido } = formEditarNombre
+    if (!nombre.trim()) { setError('El nombre no puede estar vacío.'); return }
+    setLoadingEditarNombre(true)
+    try {
+      await actualizarNombreInvitado(inv.id, nombre.trim(), apellido.trim())
+      setEditandoNombreId(null)
+      await handleCargarInvitados()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoadingEditarNombre(false)
+    }
+  }
+
   // ── Delete batch invitados ──────────────────────────────────────────────────
   async function handleDeleteBatch() {
     setLoadingDeleteBatch(true)
@@ -464,7 +490,7 @@ export function EventoTab() {
         .map((inv) => inv.carton_id)
       await eliminarInvitadosBatch(ids, cartonIds)
       setSelectedInvitados(new Set())
-      setConfirmDeleteBatch(false)
+      setShowDeleteModal(false)
       await handleCargarInvitados()
     } catch (e) {
       setError(e.message)
@@ -541,6 +567,31 @@ export function EventoTab() {
 
   return (
     <div className={styles.container}>
+
+      {/* Modal eliminar invitados */}
+      {showDeleteModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <p className={styles.modalTitle}>¿Eliminar invitados?</p>
+            <p className={styles.modalBody}>
+              Estás a punto de eliminar <strong>{selectedInvitados.size} invitado{selectedInvitados.size !== 1 ? 's' : ''}</strong>.
+              Esta acción no se puede deshacer.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
+                onClick={handleDeleteBatch}
+                disabled={loadingDeleteBatch}
+              >
+                {loadingDeleteBatch ? 'Eliminando...' : 'Confirmar eliminación'}
+              </button>
+              <button className={styles.cancelBtn} onClick={() => setShowDeleteModal(false)}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error global */}
       {error && (
@@ -873,7 +924,7 @@ export function EventoTab() {
               title="CSV con una persona por línea. Columnas: Nombre,Apellido (o separados por tabulación)"
             >ℹ</span>
           </div>
-          <button className={styles.secondaryBtn} onClick={handleCargarInvitados} disabled={loadingInvitados}>
+          <button className={styles.secondaryBtn} onClick={() => handleCargarInvitados(true)} disabled={loadingInvitados}>
             ↺
           </button>
         </div>
@@ -943,38 +994,25 @@ export function EventoTab() {
           onChange={(e) => setBuscadorInv(e.target.value)}
         />
 
+        {/* Mensaje de éxito */}
+        {invMsgExito && (
+          <p className={styles.exitoMsg}>{invMsgExito}</p>
+        )}
+
         {/* Barra de selección */}
         {selectedInvitados.size > 0 && (
           <div className={styles.selectionBar}>
-            {/* Grupo: imprimir */}
             <div className={styles.selectionGroup}>
               <span className={styles.selectionCount}>{selectedInvitados.size} seleccionados</span>
               <button className={styles.printBtn} onClick={handlePrintSelected}>
-                Imprimir ({selectedInvitados.size})
-              </button>
-              <button className={styles.cancelBtn} onClick={() => { setSelectedInvitados(new Set()); setConfirmDeleteBatch(false) }}>
-                Limpiar
+                Imprimir selección
               </button>
             </div>
-
-            {/* Divisor */}
             <div className={styles.selectionDivider} />
-
-            {/* Grupo: eliminar */}
             <div className={styles.selectionGroup}>
-              {!confirmDeleteBatch ? (
-                <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={() => setConfirmDeleteBatch(true)}>
-                  Eliminar seleccionados
-                </button>
-              ) : (
-                <>
-                  <span style={{ fontSize: 13, color: 'var(--muted)' }}>¿Confirmar eliminación?</span>
-                  <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={handleDeleteBatch} disabled={loadingDeleteBatch}>
-                    {loadingDeleteBatch ? 'Eliminando...' : 'Confirmar'}
-                  </button>
-                  <button className={styles.cancelBtn} onClick={() => setConfirmDeleteBatch(false)}>Cancelar</button>
-                </>
-              )}
+              <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={() => setShowDeleteModal(true)}>
+                Eliminar selección
+              </button>
             </div>
           </div>
         )}
@@ -1004,13 +1042,40 @@ export function EventoTab() {
             <tbody>
               {invFiltrados.map((inv) => {
                 const isEditing = editandoId === inv.id
-                const isConfirmEl = confirmEliminarId === inv.id
+                const isEditingNombre = editandoNombreId === inv.id
                 const isConfirmReset = confirmResetearId === inv.id
                 const estadoBadge = inv.asignado_at
                   ? <span className={styles.badgeVerde}>● Activo</span>
                   : inv.carton_id
                     ? <span className={styles.badgeAmarillo}>● Asignado</span>
                     : <span className={styles.badgeGris}>○ Sin cartón</span>
+
+                if (isEditingNombre) {
+                  return (
+                    <tr key={inv.id} className={styles.editRow}>
+                      <td colSpan={5}>
+                        <div className={styles.editInline}>
+                          <input
+                            className={styles.invInput}
+                            placeholder="Nombre"
+                            value={formEditarNombre.nombre}
+                            onChange={(e) => setFormEditarNombre((p) => ({ ...p, nombre: e.target.value }))}
+                          />
+                          <input
+                            className={styles.invInput}
+                            placeholder="Apellido"
+                            value={formEditarNombre.apellido}
+                            onChange={(e) => setFormEditarNombre((p) => ({ ...p, apellido: e.target.value }))}
+                          />
+                          <button className={styles.iconBtn} onClick={() => handleActualizarNombre(inv)} disabled={loadingEditarNombre}>
+                            {loadingEditarNombre ? '...' : 'Guardar'}
+                          </button>
+                          <button className={styles.cancelBtn} onClick={() => setEditandoNombreId(null)}>Cancelar</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                }
 
                 if (isEditing) {
                   return (
@@ -1055,24 +1120,33 @@ export function EventoTab() {
                     <td>{inv.cartones?.numero ? `#${inv.cartones.numero}` : '—'}</td>
                     <td>{estadoBadge}</td>
                     <td>
-                      {isConfirmEl ? (
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          <button className={`${styles.iconBtn} ${styles.dangerIconBtn}`} onClick={() => handleEliminarInvitado(inv)}>✓</button>
-                          <button className={styles.cancelBtn} onClick={() => setConfirmEliminarId(null)}>✕</button>
-                        </div>
-                      ) : isConfirmReset ? (
+                      {isConfirmReset ? (
                         <div style={{ display: 'flex', gap: 4 }}>
                           <button className={`${styles.iconBtn} ${styles.dangerIconBtn}`} onClick={() => handleResetearSesion(inv.id)}>✓</button>
                           <button className={styles.cancelBtn} onClick={() => setConfirmResetearId(null)}>✕</button>
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          <button className={styles.iconBtn} title="Cambiar cartón" onClick={() => { setEditandoId(inv.id); setNuevoCartonId('') }}>✎</button>
-                          <button className={styles.iconBtn} title="Reset sesión" onClick={() => setConfirmResetearId(inv.id)}>↺</button>
-                          <button className={`${styles.iconBtn} ${inv.oculto ? styles.iconBtnOculto : ''}`} title={inv.oculto ? 'Mostrar' : 'Ocultar'} onClick={() => handleToggleOculto(inv)}>
-                            {inv.oculto ? '👁' : '🙈'}
-                          </button>
-                          <button className={`${styles.iconBtn} ${styles.dangerIconBtn}`} title="Eliminar" onClick={() => setConfirmEliminarId(inv.id)}>✕</button>
+                        <div className={styles.rowActions}>
+                          <button
+                            className={styles.iconBtn}
+                            title="Editar nombre"
+                            onClick={() => { setEditandoNombreId(inv.id); setFormEditarNombre({ nombre: inv.nombre, apellido: inv.apellido }) }}
+                          >✎</button>
+                          <button
+                            className={styles.iconBtn}
+                            title="Cambiar cartón"
+                            onClick={() => { setEditandoId(inv.id); setNuevoCartonId('') }}
+                          >⇅</button>
+                          <button
+                            className={styles.iconBtn}
+                            title="Reiniciar sesión"
+                            onClick={() => setConfirmResetearId(inv.id)}
+                          >↺</button>
+                          <button
+                            className={`${styles.iconBtn} ${inv.oculto ? styles.iconBtnActive : ''}`}
+                            title={inv.oculto ? 'Mostrar en juego' : 'Ocultar del juego'}
+                            onClick={() => handleToggleOculto(inv)}
+                          >👁</button>
                         </div>
                       )}
                     </td>

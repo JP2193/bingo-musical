@@ -312,6 +312,18 @@ export async function desasignarCartones(invitadoIds) {
   if (error) throw error
 }
 
+export async function actualizarNombreInvitado(id, nombre, apellido) {
+  const { error } = await supabase
+    .from('invitados')
+    .update({
+      nombre,
+      apellido,
+      nombre_normalizado: normalizarStr(`${nombre} ${apellido}`),
+    })
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function toggleOcultoInvitado(id, oculto) {
   const { error } = await supabase
     .from('invitados')
