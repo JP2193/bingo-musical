@@ -37,7 +37,7 @@ function parsearLista(texto) {
     .map((l) => l.trim())
     .filter(Boolean)
     .map((l) => {
-      const sep = l.includes('\t') ? '\t' : ','
+      const sep = l.includes('\t') ? '\t' : l.includes(';') ? ';' : ','
       const parts = l.split(sep).map((p) => p.trim().replace(/^["']|["']$/g, ''))
       const nombre = parts[0] ?? ''
       const apellido = parts[1] ?? ''
@@ -946,26 +946,36 @@ export function EventoTab() {
         {/* Barra de selección */}
         {selectedInvitados.size > 0 && (
           <div className={styles.selectionBar}>
-            <span className={styles.deleteModeCount}>{selectedInvitados.size} seleccionados</span>
-            <button className={styles.printBtn} onClick={handlePrintSelected}>
-              Imprimir ({selectedInvitados.size})
-            </button>
-            {!confirmDeleteBatch ? (
-              <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={() => setConfirmDeleteBatch(true)}>
-                Eliminar seleccionados
+            {/* Grupo: imprimir */}
+            <div className={styles.selectionGroup}>
+              <span className={styles.selectionCount}>{selectedInvitados.size} seleccionados</span>
+              <button className={styles.printBtn} onClick={handlePrintSelected}>
+                Imprimir ({selectedInvitados.size})
               </button>
-            ) : (
-              <>
-                <span style={{ fontSize: 13, color: 'var(--muted)' }}>¿Confirmar eliminación?</span>
-                <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={handleDeleteBatch} disabled={loadingDeleteBatch}>
-                  {loadingDeleteBatch ? 'Eliminando...' : 'Confirmar'}
+              <button className={styles.cancelBtn} onClick={() => { setSelectedInvitados(new Set()); setConfirmDeleteBatch(false) }}>
+                Limpiar
+              </button>
+            </div>
+
+            {/* Divisor */}
+            <div className={styles.selectionDivider} />
+
+            {/* Grupo: eliminar */}
+            <div className={styles.selectionGroup}>
+              {!confirmDeleteBatch ? (
+                <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={() => setConfirmDeleteBatch(true)}>
+                  Eliminar seleccionados
                 </button>
-                <button className={styles.cancelBtn} onClick={() => setConfirmDeleteBatch(false)}>Cancelar</button>
-              </>
-            )}
-            <button className={styles.cancelBtn} onClick={() => { setSelectedInvitados(new Set()); setConfirmDeleteBatch(false) }}>
-              Limpiar
-            </button>
+              ) : (
+                <>
+                  <span style={{ fontSize: 13, color: 'var(--muted)' }}>¿Confirmar eliminación?</span>
+                  <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={handleDeleteBatch} disabled={loadingDeleteBatch}>
+                    {loadingDeleteBatch ? 'Eliminando...' : 'Confirmar'}
+                  </button>
+                  <button className={styles.cancelBtn} onClick={() => setConfirmDeleteBatch(false)}>Cancelar</button>
+                </>
+              )}
+            </div>
           </div>
         )}
 

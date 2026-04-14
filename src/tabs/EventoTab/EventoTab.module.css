@@ -797,11 +797,35 @@
 .selectionBar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  background: rgba(231, 76, 60, 0.08);
-  border: 1px solid rgba(231, 76, 60, 0.25);
+  gap: 0;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border: 1px solid #2a2a2a;
   flex-wrap: wrap;
+}
+
+.selectionGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 12px;
+}
+
+.selectionGroup:first-child {
+  padding-left: 0;
+}
+
+.selectionDivider {
+  width: 1px;
+  height: 24px;
+  background: #333;
+  flex-shrink: 0;
+}
+
+.selectionCount {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .deleteModeCount {
