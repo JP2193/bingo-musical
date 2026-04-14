@@ -37,14 +37,12 @@ export async function getPlaylistActiva() {
 
 export async function setPlaylistActiva(playlistId) {
   const userId = await getUserId()
-  // Eliminar fila existente del usuario y reinsertar
-  await supabase.from('config').delete().eq('user_id', userId).eq('key', 'playlist_activa')
-  const { error } = await supabase.from('config').insert({
-    user_id: userId,
-    key: 'playlist_activa',
-    value: playlistId,
-    updated_at: new Date().toISOString(),
-  })
+  const { error } = await supabase
+    .from('config')
+    .upsert(
+      { user_id: userId, key: 'playlist_activa', value: playlistId, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,key' }
+    )
   if (error) throw error
 }
 
