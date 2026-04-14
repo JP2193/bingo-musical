@@ -13,9 +13,12 @@ function normalizarStr(str = '') {
 // ─── Playlists ─────────────────────────────────────────────────────────────────
 
 export async function getPlaylists() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
   const { data, error } = await supabase
     .from('playlists')
     .select('id, name, tracks')
+    .eq('user_id', user.id)
     .order('saved_at', { ascending: true })
   if (error) throw error
   return data ?? []
