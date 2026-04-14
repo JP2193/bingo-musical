@@ -15,6 +15,13 @@ export async function getPlaylists() {
   return data ?? []
 }
 
+function handleSupabaseError(error, name) {
+  if (error.code === '23505') {
+    throw new Error(`Ya tenés una playlist llamada "${name}". Elegí otro nombre.`)
+  }
+  throw error
+}
+
 export async function createPlaylist(name, tracks) {
   const userId = await getUserId()
   const { data, error } = await supabase
@@ -22,7 +29,7 @@ export async function createPlaylist(name, tracks) {
     .insert({ user_id: userId, name: name.trim(), tracks })
     .select('id, name, tracks, saved_at')
     .single()
-  if (error) throw error
+  if (error) handleSupabaseError(error, name)
   return data
 }
 
@@ -31,7 +38,7 @@ export async function updatePlaylist(id, name, tracks) {
     .from('playlists')
     .update({ name: name.trim(), tracks })
     .eq('id', id)
-  if (error) throw error
+  if (error) handleSupabaseError(error, name)
 }
 
 export async function renamePlaylist(id, name) {
@@ -39,7 +46,7 @@ export async function renamePlaylist(id, name) {
     .from('playlists')
     .update({ name: name.trim() })
     .eq('id', id)
-  if (error) throw error
+  if (error) handleSupabaseError(error, name)
 }
 
 export async function deletePlaylist(id) {
