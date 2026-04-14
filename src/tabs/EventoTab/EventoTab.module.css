@@ -793,8 +793,8 @@
   color: var(--muted);
 }
 
-/* ─── Delete mode invitados ──────────────────────────────────────────────────── */
-.deleteModeBar {
+/* ─── Barra de selección unificada ──────────────────────────────────────────── */
+.selectionBar {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -808,6 +808,29 @@
   font-size: 13px;
   color: var(--danger);
   flex: 1;
+}
+
+/* ─── Info icon ──────────────────────────────────────────────────────────────── */
+.infoIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  cursor: help;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ─── Active button state ────────────────────────────────────────────────────── */
+.activeBtn {
+  border-color: var(--yellow);
+  color: var(--yellow);
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */

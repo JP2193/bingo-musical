@@ -37,10 +37,17 @@ function parsearLista(texto) {
     .map((l) => l.trim())
     .filter(Boolean)
     .map((l) => {
-      const [nombre, apellido] = l.split('\t')
-      return { nombre: nombre?.trim() ?? '', apellido: apellido?.trim() ?? '' }
+      const sep = l.includes('\t') ? '\t' : ','
+      const parts = l.split(sep).map((p) => p.trim().replace(/^["']|["']$/g, ''))
+      const nombre = parts[0] ?? ''
+      const apellido = parts[1] ?? ''
+      return { nombre, apellido }
     })
-    .filter((inv) => inv.nombre && inv.apellido)
+    .filter((inv) => {
+      const n = inv.nombre.toLowerCase()
+      if (['nombre', 'name', 'apellido', 'lastname'].includes(n)) return false
+      return inv.nombre
+    })
 }
 
 function normalizarStr(str = '') {
@@ -111,6 +118,7 @@ export function EventoTab() {
   const [ranking, setRanking] = useState(null)
   const [loadingRanking, setLoadingRanking] = useState(false)
   const rankingIntervalRef = useRef(null)
+  const fileImportRef = useRef(null)
 
   // ── Cartones (estado evento) ───────────────────────────────────────────────
   const [estado, setEstado] = useState(null)
@@ -122,7 +130,7 @@ export function EventoTab() {
   const [invitados, setInvitados] = useState([])
   const [cartonesSobrantes, setCartonesSobrantes] = useState([])
   const [loadingInvitados, setLoadingInvitados] = useState(false)
-  const [txtLista, setTxtLista] = useState('')
+  const [listaImportada, setListaImportada] = useState([])
   const [loadingCarga, setLoadingCarga] = useState(false)
   const [confirmReemplazar, setConfirmReemplazar] = useState(false)
   const [loadingPreasignar, setLoadingPreasignar] = useState(false)
@@ -136,14 +144,11 @@ export function EventoTab() {
   const [formNuevo, setFormNuevo] = useState({ nombre: '', apellido: '', cartonId: '' })
   const [loadingFormNuevo, setLoadingFormNuevo] = useState(false)
 
-  // Delete mode
-  const [deleteMode, setDeleteMode] = useState(false)
-  const [selectedForDelete, setSelectedForDelete] = useState(new Set())
+  // Selección unificada (impresión y eliminación)
+  const [selectedInvitados, setSelectedInvitados] = useState(new Set())
   const [confirmDeleteBatch, setConfirmDeleteBatch] = useState(false)
   const [loadingDeleteBatch, setLoadingDeleteBatch] = useState(false)
 
-  // Impresión
-  const [selectedForPrint, setSelectedForPrint] = useState(new Set())
 
   // ── Simulación ─────────────────────────────────────────────────────────────
   const [simActivada, setSimActivada] = useState(false)
@@ -361,7 +366,7 @@ export function EventoTab() {
     try {
       await insertInvitadosBatch(lista, playlistActivaId)
       await handleCargarInvitados()
-      setTxtLista('')
+      setListaImportada([])
       setConfirmReemplazar(false)
     } catch (e) {
       setError(e.message)
@@ -370,11 +375,19 @@ export function EventoTab() {
     }
   }
 
-  function handleCargarLista() {
-    const lista = parsearLista(txtLista)
-    if (lista.length === 0) { setError('Formato inválido. Usá: Nombre[Tab]Apellido por línea.'); return }
-    if (invitados.length > 0) { setConfirmReemplazar(true); return }
-    ejecutarCargaLista(lista)
+  function handleFileImport(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const lista = parsearLista(ev.target.result)
+      if (lista.length === 0) { setError('El archivo no tiene filas válidas. Formato esperado: Nombre,Apellido'); return }
+      setListaImportada(lista)
+      if (invitados.length > 0) { setConfirmReemplazar(true); return }
+      ejecutarCargaLista(lista)
+    }
+    reader.readAsText(file, 'UTF-8')
   }
 
   async function handlePreasignar() {
@@ -442,25 +455,16 @@ export function EventoTab() {
   }
 
   // ── Delete batch invitados ──────────────────────────────────────────────────
-  function toggleSelectForDelete(id) {
-    setSelectedForDelete((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
   async function handleDeleteBatch() {
     setLoadingDeleteBatch(true)
     try {
-      const ids = [...selectedForDelete]
+      const ids = [...selectedInvitados]
       const cartonIds = invitados
         .filter((inv) => ids.includes(inv.id) && inv.carton_id)
         .map((inv) => inv.carton_id)
       await eliminarInvitadosBatch(ids, cartonIds)
-      setSelectedForDelete(new Set())
+      setSelectedInvitados(new Set())
       setConfirmDeleteBatch(false)
-      setDeleteMode(false)
       await handleCargarInvitados()
     } catch (e) {
       setError(e.message)
@@ -481,7 +485,7 @@ export function EventoTab() {
 
   // ── Imprimir HTML ───────────────────────────────────────────────────────────
   async function handlePrintSelected() {
-    const ids = [...selectedForPrint]
+    const ids = [...selectedInvitados]
     const withCarton = invitados.filter((inv) => ids.includes(inv.id) && inv.carton_id)
     if (withCarton.length === 0) { setError('Los invitados seleccionados no tienen cartón asignado.'); return }
 
@@ -834,59 +838,58 @@ export function EventoTab() {
   }
 
   function renderInvitados() {
+    const allIds = invFiltrados.map((i) => i.id)
+    const todosChecked = allIds.length > 0 && allIds.every((id) => selectedInvitados.has(id))
+
     return (
       <>
+        {/* Input file oculto */}
+        <input
+          ref={fileImportRef}
+          type="file"
+          accept=".csv,.txt"
+          style={{ display: 'none' }}
+          onChange={handleFileImport}
+        />
+
         {/* Acciones principales */}
         <div className={styles.actionRow}>
           <button
             className={styles.secondaryBtn}
-            onClick={() => { setMostrandoFormNuevo(true); setDeleteMode(false) }}
+            onClick={() => setMostrandoFormNuevo(true)}
           >
             + Agregar
           </button>
-          <button
-            className={`${styles.secondaryBtn} ${deleteMode ? styles.dangerBtn : ''}`}
-            onClick={() => {
-              setDeleteMode(!deleteMode)
-              setSelectedForDelete(new Set())
-              setConfirmDeleteBatch(false)
-              setMostrandoFormNuevo(false)
-            }}
-          >
-            {deleteMode ? 'Cancelar' : 'Eliminar'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button
+              className={styles.secondaryBtn}
+              onClick={() => fileImportRef.current?.click()}
+              disabled={loadingCarga}
+            >
+              {loadingCarga ? 'Cargando...' : 'Importar lista de invitados'}
+            </button>
+            <span
+              className={styles.infoIcon}
+              title="CSV con una persona por línea. Columnas: Nombre,Apellido (o separados por tabulación)"
+            >ℹ</span>
+          </div>
           <button className={styles.secondaryBtn} onClick={handleCargarInvitados} disabled={loadingInvitados}>
             ↺
           </button>
         </div>
 
-        {/* Delete mode bar */}
-        {deleteMode && (
-          <div className={styles.deleteModeBar}>
-            <span className={styles.deleteModeCount}>
-              {selectedForDelete.size} seleccionados
+        {/* Confirmación reemplazar lista */}
+        {confirmReemplazar && (
+          <div className={styles.confirmBox}>
+            <span style={{ fontSize: 13 }}>
+              Esto reemplazará la lista actual ({invitados.length} invitados) con {listaImportada.length} invitados del CSV. ¿Continuar?
             </span>
-            {!confirmDeleteBatch ? (
-              <button
-                className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
-                disabled={selectedForDelete.size === 0}
-                onClick={() => setConfirmDeleteBatch(true)}
-              >
-                Eliminar seleccionados
+            <div className={styles.actionRow}>
+              <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={() => ejecutarCargaLista(listaImportada)} disabled={loadingCarga}>
+                {loadingCarga ? 'Cargando...' : 'Reemplazar'}
               </button>
-            ) : (
-              <>
-                <span style={{ fontSize: 13, color: 'var(--muted)' }}>¿Confirmar eliminación?</span>
-                <button
-                  className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
-                  onClick={handleDeleteBatch}
-                  disabled={loadingDeleteBatch}
-                >
-                  {loadingDeleteBatch ? 'Eliminando...' : 'Confirmar'}
-                </button>
-                <button className={styles.cancelBtn} onClick={() => setConfirmDeleteBatch(false)}>Cancelar</button>
-              </>
-            )}
+              <button className={styles.cancelBtn} onClick={() => { setConfirmReemplazar(false); setListaImportada([]) }}>Cancelar</button>
+            </div>
           </div>
         )}
 
@@ -922,33 +925,6 @@ export function EventoTab() {
           </div>
         )}
 
-        {/* Carga masiva */}
-        <div className={styles.invSection}>
-          <span className={styles.label}>Carga masiva (Nombre[Tab]Apellido por línea)</span>
-          <textarea
-            className={styles.textarea}
-            rows={4}
-            placeholder={'Juan\tGarcía\nMaría\tLópez'}
-            value={txtLista}
-            onChange={(e) => setTxtLista(e.target.value)}
-          />
-          {confirmReemplazar ? (
-            <div className={styles.confirmBox}>
-              <span style={{ fontSize: 13 }}>Esto reemplazará la lista actual de {invitados.length} invitados. ¿Continuar?</span>
-              <div className={styles.actionRow}>
-                <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={() => ejecutarCargaLista(parsearLista(txtLista))} disabled={loadingCarga}>
-                  {loadingCarga ? 'Cargando...' : 'Reemplazar'}
-                </button>
-                <button className={styles.cancelBtn} onClick={() => setConfirmReemplazar(false)}>Cancelar</button>
-              </div>
-            </div>
-          ) : (
-            <button className={styles.secondaryBtn} onClick={handleCargarLista} disabled={loadingCarga || !txtLista.trim()}>
-              {loadingCarga ? 'Cargando...' : 'Cargar lista'}
-            </button>
-          )}
-        </div>
-
         {/* Pre-asignar */}
         <div className={styles.invSection}>
           <div className={styles.actionRow}>
@@ -967,27 +943,31 @@ export function EventoTab() {
           onChange={(e) => setBuscadorInv(e.target.value)}
         />
 
-        {/* Impresión */}
-        <div className={styles.printBar}>
-          <label className={styles.selectAllLabel}>
-            <input
-              type="checkbox"
-              checked={selectedForPrint.size === invitados.filter((i) => i.carton_id).length && invitados.filter((i) => i.carton_id).length > 0}
-              onChange={(e) => {
-                const withCarton = invitados.filter((i) => i.carton_id).map((i) => i.id)
-                setSelectedForPrint(e.target.checked ? new Set(withCarton) : new Set())
-              }}
-            />
-            Todos
-          </label>
-          <button
-            className={styles.printBtn}
-            onClick={handlePrintSelected}
-            disabled={selectedForPrint.size === 0}
-          >
-            Imprimir seleccionados ({selectedForPrint.size})
-          </button>
-        </div>
+        {/* Barra de selección */}
+        {selectedInvitados.size > 0 && (
+          <div className={styles.selectionBar}>
+            <span className={styles.deleteModeCount}>{selectedInvitados.size} seleccionados</span>
+            <button className={styles.printBtn} onClick={handlePrintSelected}>
+              Imprimir ({selectedInvitados.size})
+            </button>
+            {!confirmDeleteBatch ? (
+              <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={() => setConfirmDeleteBatch(true)}>
+                Eliminar seleccionados
+              </button>
+            ) : (
+              <>
+                <span style={{ fontSize: 13, color: 'var(--muted)' }}>¿Confirmar eliminación?</span>
+                <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={handleDeleteBatch} disabled={loadingDeleteBatch}>
+                  {loadingDeleteBatch ? 'Eliminando...' : 'Confirmar'}
+                </button>
+                <button className={styles.cancelBtn} onClick={() => setConfirmDeleteBatch(false)}>Cancelar</button>
+              </>
+            )}
+            <button className={styles.cancelBtn} onClick={() => { setSelectedInvitados(new Set()); setConfirmDeleteBatch(false) }}>
+              Limpiar
+            </button>
+          </div>
+        )}
 
         {/* Tabla de invitados */}
         {loadingInvitados ? (
@@ -998,7 +978,13 @@ export function EventoTab() {
           <table className={styles.table}>
             <thead>
               <tr>
-                {(deleteMode || selectedForPrint.size > 0 || true) && <th style={{ width: 32 }} />}
+                <th style={{ width: 32 }}>
+                  <input
+                    type="checkbox"
+                    checked={todosChecked}
+                    onChange={(e) => setSelectedInvitados(e.target.checked ? new Set(allIds) : new Set())}
+                  />
+                </th>
                 <th>Invitado</th>
                 <th>Cartón</th>
                 <th>Estado</th>
@@ -1043,25 +1029,17 @@ export function EventoTab() {
                 return (
                   <tr key={inv.id} className={inv.oculto ? styles.trOculto : ''}>
                     <td className={styles.checkCell}>
-                      {deleteMode ? (
-                        <input
-                          type="checkbox"
-                          checked={selectedForDelete.has(inv.id)}
-                          onChange={() => toggleSelectForDelete(inv.id)}
-                        />
-                      ) : inv.carton_id ? (
-                        <input
-                          type="checkbox"
-                          checked={selectedForPrint.has(inv.id)}
-                          onChange={(e) => {
-                            setSelectedForPrint((prev) => {
-                              const next = new Set(prev)
-                              e.target.checked ? next.add(inv.id) : next.delete(inv.id)
-                              return next
-                            })
-                          }}
-                        />
-                      ) : null}
+                      <input
+                        type="checkbox"
+                        checked={selectedInvitados.has(inv.id)}
+                        onChange={(e) => {
+                          setSelectedInvitados((prev) => {
+                            const next = new Set(prev)
+                            e.target.checked ? next.add(inv.id) : next.delete(inv.id)
+                            return next
+                          })
+                        }}
+                      />
                     </td>
                     <td>{inv.nombre} {inv.apellido}</td>
                     <td>{inv.cartones?.numero ? `#${inv.cartones.numero}` : '—'}</td>
