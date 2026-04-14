@@ -191,10 +191,7 @@ export function EventoTab() {
     if (subTab === 'Cartones') handleCargarEstado()
     if (subTab === 'Invitados') handleCargarInvitados()
     if (subTab !== 'Ranking') clearInterval(rankingIntervalRef.current)
-    if (subTab !== 'Simulación') {
-      clearInterval(simIntervalRef.current)
-      setSimActivada(false)
-    }
+    if (subTab !== 'Simulación') clearInterval(simIntervalRef.current)
   }, [subTab, playlistActivaId])
 
   // ─── Playlist activa ────────────────────────────────────────────────────────
