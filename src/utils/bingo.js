@@ -1,5 +1,5 @@
 /**
- * Fisher-Yates shuffle. Nunca usar .sort(() => Math.random() - 0.5).
+ * Fisher-Yates shuffle.
  * @param {Array} array
  * @returns {Array} nueva copia mezclada
  */
@@ -13,57 +13,19 @@ export function shuffleArray(array) {
 }
 
 /**
- * Genera un cartón de bingo: cols*rows canciones aleatorias únicas.
- * @param {Array} tracks
- * @param {number} cols
- * @param {number} rows
- * @returns {Array}
- */
-export function generateCard(tracks, cols, rows) {
-  return shuffleArray([...tracks]).slice(0, cols * rows)
-}
-
-/**
- * Devuelve un fingerprint del cartón.
- * DECISIÓN: fingerprint sensible al orden (sin sort).
- * Dos cartones con las mismas canciones en distinto orden = distinto fingerprint = cartones distintos.
- * En bingo, la posición de cada canción importa para el jugador.
- * @param {Array} card
+ * Fingerprint de un cartón basado en el orden de sus tracks.
+ * Dos cartones con las mismas canciones en distinto orden = cartones distintos.
+ * @param {Array<string>} ids - array de UUIDs de tracks
  * @returns {string}
  */
-export function cardFingerprint(card) {
-  return card.map((t) => t.id).join('|')
-}
-
-/**
- * Genera un cartón único que no haya aparecido antes en esta sesión.
- * @param {Array} tracks
- * @param {number} cols
- * @param {number} rows
- * @param {Array} previousCards - array de cartones anteriores
- * @returns {Array}
- */
-export function generateUniqueCard(tracks, cols, rows, previousCards) {
-  const usedFingerprints = new Set(previousCards.map(cardFingerprint))
-
-  let attempts = 0
-  while (attempts < 1000) {
-    const card = generateCard(tracks, cols, rows)
-    const fp = cardFingerprint(card)
-    if (!usedFingerprints.has(fp)) return card
-    attempts++
-  }
-
-  throw new Error(
-    `No hay suficientes combinaciones únicas para generar ${previousCards.length + 1} cartones distintos con este pool de canciones.`
-  )
+export function cardFingerprint(ids) {
+  return ids.join('|')
 }
 
 /**
  * Genera qty cartones únicos para el evento.
- * Cada cartón es un array de cols*rows IDs de Spotify en el orden del grid.
- * Usa fingerprint por contenido (sort) para garantizar que no haya dos iguales.
- * @param {Array} tracks - array de objetos { id, ... }
+ * Cada cartón es un array de cols*rows UUIDs de tracks en el orden del grid.
+ * @param {Array} tracks - array de objetos { id, name, artist }
  * @param {number} cols
  * @param {number} rows
  * @param {number} qty

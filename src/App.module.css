@@ -5,6 +5,58 @@
   overflow: hidden;
 }
 
+/* ─── Login ──────────────────────────────────────────────────────────────────── */
+.loginScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: var(--black);
+}
+
+.loginCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.loginTitle {
+  font-family: var(--font-display);
+  font-size: 64px;
+  letter-spacing: 0.1em;
+  color: var(--yellow);
+}
+
+.loginBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: var(--white);
+  font-size: 15px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.loginBtn:hover {
+  border-color: var(--yellow);
+  background: var(--surface2);
+}
+
+.loadingScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: var(--muted);
+  font-size: 16px;
+}
+
 /* ─── Header ─────────────────────────────────────────────────────────────────── */
 .header {
   display: flex;
@@ -23,15 +75,6 @@
   letter-spacing: 0.08em;
   color: var(--yellow);
   white-space: nowrap;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.logo:hover {
-  opacity: 0.8;
 }
 
 .tabs {
@@ -39,6 +82,7 @@
   align-items: stretch;
   height: 100%;
   gap: 0;
+  flex: 1;
 }
 
 .tab {
@@ -76,6 +120,37 @@
   transform: scaleX(1);
 }
 
+/* ─── User area ──────────────────────────────────────────────────────────────── */
+.userArea {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.userEmail {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logoutBtn {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 4px 10px;
+  border: 1px solid #333;
+  border-radius: 3px;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.logoutBtn:hover {
+  color: var(--white);
+  border-color: #555;
+}
+
 /* ─── Main content ───────────────────────────────────────────────────────────── */
 .main {
   flex: 1;
@@ -97,6 +172,15 @@
     font-size: 19px;
     flex: 1;
     padding-bottom: 8px;
+  }
+
+  .userArea {
+    margin-left: 0;
+    padding-bottom: 8px;
+  }
+
+  .userEmail {
+    display: none;
   }
 
   .tabs {

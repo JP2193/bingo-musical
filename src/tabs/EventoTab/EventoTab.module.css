@@ -735,6 +735,81 @@
   padding: 4px 0;
 }
 
+/* ─── Playlist activa destacada ──────────────────────────────────────────────── */
+.activaBox {
+  background: var(--surface2);
+  border-left: 3px solid var(--yellow);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activaSelectRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.activaInfo {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ─── Grid configurator ──────────────────────────────────────────────────────── */
+.gridRow {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.gridHint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ─── Simulación toggle ──────────────────────────────────────────────────────── */
+.simHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.simToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.simOff {
+  opacity: 0.5;
+  text-align: center;
+  padding: 32px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ─── Delete mode invitados ──────────────────────────────────────────────────── */
+.deleteModeBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(231, 76, 60, 0.08);
+  border: 1px solid rgba(231, 76, 60, 0.25);
+  flex-wrap: wrap;
+}
+
+.deleteModeCount {
+  font-size: 13px;
+  color: var(--danger);
+  flex: 1;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .container {

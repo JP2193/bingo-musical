@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { ErrorBanner } from '../../components/UI/ErrorBanner'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { generateAllUniqueCards } from '../../utils/bingo'
+import { printCartones } from '../../utils/printCartones'
 import {
   getPlaylists,
   getPlaylistActiva,
@@ -8,12 +8,12 @@ import {
   deleteCartonesByPlaylist,
   insertCartonesBatch,
   getEstadoEvento,
-  resetEvento,
   getCancionesCantadas,
   activarCancion,
   desactivarCancion,
   resetCancionesCantadas,
   getRankingCartones,
+  getSimulacionData,
   getInvitados,
   getCartonesSobrantes,
   insertInvitadosBatch,
@@ -21,12 +21,12 @@ import {
   cambiarCarton,
   agregarInvitado,
   eliminarInvitado,
+  eliminarInvitadosBatch,
   resetearAsignadoAt,
-  getCartonesTrackIds,
   toggleOcultoInvitado,
   desasignarCartones,
+  getCartonesTrackIds,
 } from '../../utils/supabaseEvento'
-import { imprimirCartones } from '../../utils/imprimirCartones'
 import styles from './EventoTab.module.css'
 
 const MEDAL = ['🥇', '🥈', '🥉']
@@ -47,39 +47,78 @@ function normalizarStr(str = '') {
   return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
 }
 
+function Stepper({ value, onChange, min = 1, max, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      {label && <span className={styles.label}>{label}</span>}
+      <div className={styles.stepper}>
+        <button
+          className={styles.stepBtn}
+          onClick={() => onChange(Math.max(min, value - 1))}
+          disabled={value <= min}
+        >−</button>
+        <input
+          className={styles.numberInput}
+          type="number"
+          value={value}
+          min={min}
+          max={max}
+          onChange={(e) => {
+            const v = Number(e.target.value)
+            if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)))
+          }}
+        />
+        <button
+          className={styles.stepBtn}
+          onClick={() => onChange(Math.min(max, value + 1))}
+          disabled={max !== undefined && value >= max}
+        >+</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Sub-tabs ─────────────────────────────────────────────────────────────────
+
+const SUB_TABS = ['Canciones', 'Ranking', 'Cartones', 'Invitados', 'Simulación']
+
 export function EventoTab() {
+  // ── Playlists ──────────────────────────────────────────────────────────────
   const [playlists, setPlaylists] = useState([])
   const [playlistActivaId, setPlaylistActivaId] = useState('')
+  const [settingActiva, setSettingActiva] = useState(false)
+
+  // ── Generador ──────────────────────────────────────────────────────────────
+  const [filas, setFilas] = useState(3)
+  const [columnas, setColumnas] = useState(5)
   const [cantidad, setCantidad] = useState(120)
-  const [formato, setFormato] = useState('3x5')
-  const [error, setError] = useState('')
+  const [generando, setGenerando] = useState(false)
   const [progreso, setProgreso] = useState(null)
   const [exito, setExito] = useState('')
-  const [generando, setGenerando] = useState(false)
+  const [error, setError] = useState('')
 
-  // Sub-tabs
-  const [subTab, setSubTab] = useState('canciones')
+  // ── Sub-tabs ───────────────────────────────────────────────────────────────
+  const [subTab, setSubTab] = useState('Canciones')
 
-  // Canciones
+  // ── Canciones ──────────────────────────────────────────────────────────────
   const [cantadas, setCantadas] = useState(new Set())
   const [loadingCanciones, setLoadingCanciones] = useState(false)
   const [confirmResetCanciones, setConfirmResetCanciones] = useState(false)
-  const [toggleStates, setToggleStates] = useState({})  // { [trackId]: 'loading' | 'ok' | 'err' }
-  const [toggleErrors, setToggleErrors] = useState({})  // { [trackId]: string }
+  const [toggleStates, setToggleStates] = useState({})
+  const [toggleErrors, setToggleErrors] = useState({})
 
-  // Ranking
+  // ── Ranking ────────────────────────────────────────────────────────────────
   const [ranking, setRanking] = useState(null)
   const [loadingRanking, setLoadingRanking] = useState(false)
   const rankingIntervalRef = useRef(null)
 
-  // Cartones
+  // ── Cartones (estado evento) ───────────────────────────────────────────────
   const [estado, setEstado] = useState(null)
   const [loadingEstado, setLoadingEstado] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmEliminarCartones, setConfirmEliminarCartones] = useState(false)
-  const [loadingEliminarCartones, setLoadingEliminarCartones] = useState(false)
 
-  // Invitados
+  // ── Invitados ──────────────────────────────────────────────────────────────
   const [invitados, setInvitados] = useState([])
   const [cartonesSobrantes, setCartonesSobrantes] = useState([])
   const [loadingInvitados, setLoadingInvitados] = useState(false)
@@ -97,1014 +136,1030 @@ export function EventoTab() {
   const [formNuevo, setFormNuevo] = useState({ nombre: '', apellido: '', cartonId: '' })
   const [loadingFormNuevo, setLoadingFormNuevo] = useState(false)
 
-  // Impresión / acciones en bloque
-  const [seleccionados, setSeleccionados] = useState(new Set())
-  const [modalImprimir, setModalImprimir] = useState(false)
-  const [progresoImprimir, setProgresoImprimir] = useState('')
-  const [generandoPDF, setGenerandoPDF] = useState(false)
-  const [modalDesasignar, setModalDesasignar] = useState(false)
-  const [loadingDesasignar, setLoadingDesasignar] = useState(false)
+  // Delete mode
+  const [deleteMode, setDeleteMode] = useState(false)
+  const [selectedForDelete, setSelectedForDelete] = useState(new Set())
+  const [confirmDeleteBatch, setConfirmDeleteBatch] = useState(false)
+  const [loadingDeleteBatch, setLoadingDeleteBatch] = useState(false)
 
+  // Impresión
+  const [selectedForPrint, setSelectedForPrint] = useState(new Set())
+
+  // ── Simulación ─────────────────────────────────────────────────────────────
+  const [simActivada, setSimActivada] = useState(false)
+  const [simData, setSimData] = useState(null)
+  const [loadingSim, setLoadingSim] = useState(false)
+  const simIntervalRef = useRef(null)
+
+  // ── Init ───────────────────────────────────────────────────────────────────
   useEffect(() => {
-    async function cargarDatos() {
-      try {
-        const [listas, activa] = await Promise.all([getPlaylists(), getPlaylistActiva()])
-        setPlaylists(listas)
+    Promise.all([getPlaylists(), getPlaylistActiva()])
+      .then(([pls, activa]) => {
+        setPlaylists(pls)
         setPlaylistActivaId(activa)
-      } catch {
-        setError('Error al cargar playlists')
-      }
-    }
-    cargarDatos()
+      })
+      .catch(() => {})
   }, [])
 
-  const playlistActiva = playlists.find((p) => p.id === playlistActivaId)
-  const tracks = playlistActiva?.tracks ?? []
+  // ── Cargar datos al cambiar playlist activa ────────────────────────────────
+  useEffect(() => {
+    if (!playlistActivaId) return
+    handleCargarCanciones()
+  }, [playlistActivaId])
 
-  async function handleCambiarPlaylist(e) {
-    const id = e.target.value
-    setPlaylistActivaId(id)
-    setError('')
-    setExito('')
-    setCantadas(new Set())
-    setRanking(null)
-    setEstado(null)
-    setInvitados([])
-    setCartonesSobrantes([])
+  // ── Limpiar ranking interval al desmontar ──────────────────────────────────
+  useEffect(() => {
+    return () => {
+      clearInterval(rankingIntervalRef.current)
+      clearInterval(simIntervalRef.current)
+    }
+  }, [])
+
+  // ── Cargar datos de sub-tab al cambiar ─────────────────────────────────────
+  useEffect(() => {
+    if (!playlistActivaId) return
+    if (subTab === 'Ranking') handleCargarRanking()
+    if (subTab === 'Cartones') handleCargarEstado()
+    if (subTab === 'Invitados') handleCargarInvitados()
+    if (subTab !== 'Ranking') clearInterval(rankingIntervalRef.current)
+    if (subTab !== 'Simulación') {
+      clearInterval(simIntervalRef.current)
+      setSimActivada(false)
+    }
+  }, [subTab, playlistActivaId])
+
+  // ─── Playlist activa ────────────────────────────────────────────────────────
+
+  async function handleSetPlaylistActiva(id) {
+    setSettingActiva(true)
     try {
       await setPlaylistActiva(id)
-    } catch {
-      setError('Error al guardar la playlist activa')
+      setPlaylistActivaId(id)
+      // Limpiar estado de evento anterior
+      setCantadas(new Set())
+      setRanking(null)
+      setEstado(null)
+      setInvitados([])
+      setSubTab('Canciones')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setSettingActiva(false)
     }
   }
 
-  const formatoConfig = formato === '4x4'
-    ? { cols: 4, rows: 4, minTracks: 16, label: '4×4 (16 temas por cartón)' }
-    : { cols: 3, rows: 5, minTracks: 15, label: '3×5 (15 temas por cartón)' }
+  const playlistActiva = playlists.find((p) => p.id === playlistActivaId)
+
+  // ─── Generador de cartones ──────────────────────────────────────────────────
+
+  const totalCeldas = filas * columnas
+  const tracksDisponibles = playlistActiva?.tracks?.length ?? 0
 
   async function handleGenerarCartones() {
-    setError('')
-    setExito('')
-    setProgreso(null)
-    if (!playlistActivaId) { setError('Seleccioná una playlist primero'); return }
-    if (tracks.length < formatoConfig.minTracks) {
-      setError(`La playlist tiene ${tracks.length} temas. Necesitás al menos ${formatoConfig.minTracks} para un cartón ${formato}`)
+    if (!playlistActivaId) { setError('Seleccioná una playlist activa primero.'); return }
+    if (tracksDisponibles < totalCeldas) {
+      setError(`La playlist tiene ${tracksDisponibles} canciones pero el cartón necesita ${totalCeldas}.`)
       return
     }
+
     setGenerando(true)
+    setProgreso(null)
+    setExito('')
+    setError('')
+
     try {
-      const ids = generateAllUniqueCards(tracks, formatoConfig.cols, formatoConfig.rows, cantidad)
+      const tracks = playlistActiva.tracks
+      const cards = generateAllUniqueCards(tracks, columnas, filas, cantidad)
+
       await deleteCartonesByPlaylist(playlistActivaId)
-      const cartones = ids.map((track_ids, i) => ({ numero: i + 1, playlist_id: playlistActivaId, track_ids }))
-      await insertCartonesBatch(cartones, (ins, total) => setProgreso({ insertados: ins, total }))
-      setExito(`✓ ${cantidad} cartones listos para el evento`)
-      setProgreso(null)
-    } catch {
-      setError('Error al guardar los cartones. Intentá de nuevo')
-      setProgreso(null)
+      const rows = cards.map((trackIds, i) => ({
+        numero: i + 1,
+        playlist_id: playlistActivaId,
+        track_ids: trackIds,
+      }))
+
+      await insertCartonesBatch(rows, (ins, total) =>
+        setProgreso(`Guardando... ${ins}/${total}`)
+      )
+
+      setExito(`✓ ${cantidad} cartones generados correctamente.`)
+      setTimeout(() => setExito(''), 4000)
+    } catch (e) {
+      setError(e.message)
     } finally {
       setGenerando(false)
+      setProgreso(null)
     }
   }
 
-  // ── Canciones ─────────────────────────────────────────────────────────────────
+  // ─── Canciones ──────────────────────────────────────────────────────────────
 
-  const handleCargarCanciones = useCallback(async () => {
+  async function handleCargarCanciones() {
     if (!playlistActivaId) return
     setLoadingCanciones(true)
     try {
-      setCantadas(await getCancionesCantadas(playlistActivaId))
-    } catch {
-      setError('Error al cargar canciones cantadas')
+      const set = await getCancionesCantadas(playlistActivaId)
+      setCantadas(set)
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoadingCanciones(false)
     }
-  }, [playlistActivaId])
-
-  useEffect(() => {
-    if (subTab === 'canciones' && playlistActivaId) handleCargarCanciones()
-  }, [subTab, playlistActivaId, handleCargarCanciones])
+  }
 
   async function handleToggleCancion(trackId, isActive) {
-    setCantadas((prev) => {
-      const next = new Set(prev)
-      if (isActive) next.delete(trackId); else next.add(trackId)
+    setToggleStates((prev) => ({ ...prev, [trackId]: 'loading' }))
+    setToggleErrors((prev) => { const n = { ...prev }; delete n[trackId]; return n })
+
+    const prev = new Set(cantadas)
+    setCantadas((s) => {
+      const next = new Set(s)
+      isActive ? next.add(trackId) : next.delete(trackId)
       return next
     })
-    setToggleStates((prev) => ({ ...prev, [trackId]: 'loading' }))
-    setToggleErrors((prev) => { const next = { ...prev }; delete next[trackId]; return next })
 
     try {
-      if (isActive) await desactivarCancion(playlistActivaId, trackId)
-      else await activarCancion(playlistActivaId, trackId)
-
-      setToggleStates((prev) => ({ ...prev, [trackId]: 'ok' }))
-      setTimeout(() => {
-        setToggleStates((prev) => { const next = { ...prev }; delete next[trackId]; return next })
-      }, 1000)
-    } catch {
-      setCantadas((prev) => {
-        const next = new Set(prev)
-        if (isActive) next.add(trackId); else next.delete(trackId)
-        return next
-      })
-      setToggleStates((prev) => ({ ...prev, [trackId]: 'err' }))
-      setToggleErrors((prev) => ({ ...prev, [trackId]: 'No se pudo guardar. Intentá de nuevo.' }))
+      if (isActive) await activarCancion(playlistActivaId, trackId)
+      else await desactivarCancion(playlistActivaId, trackId)
+      setToggleStates((s) => ({ ...s, [trackId]: 'ok' }))
+      setTimeout(() => setToggleStates((s) => { const n = { ...s }; delete n[trackId]; return n }), 1200)
+    } catch (e) {
+      setCantadas(prev)
+      setToggleStates((s) => { const n = { ...s }; delete n[trackId]; return n })
+      setToggleErrors((s) => ({ ...s, [trackId]: 'Error al guardar' }))
     }
   }
 
   async function handleResetCanciones() {
-    if (!confirmResetCanciones) { setConfirmResetCanciones(true); return }
     try {
       await resetCancionesCantadas(playlistActivaId)
       setCantadas(new Set())
       setConfirmResetCanciones(false)
-    } catch {
-      setError('Error al resetear el juego')
+    } catch (e) {
+      setError(e.message)
     }
   }
 
-  // ── Ranking ───────────────────────────────────────────────────────────────────
+  // ─── Ranking ────────────────────────────────────────────────────────────────
 
   const handleCargarRanking = useCallback(async () => {
     if (!playlistActivaId) return
     setLoadingRanking(true)
     try {
-      setRanking(await getRankingCartones(playlistActivaId))
-    } catch {
-      setError('Error al cargar el ranking')
+      const data = await getRankingCartones(playlistActivaId)
+      setRanking(data)
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoadingRanking(false)
     }
   }, [playlistActivaId])
 
   useEffect(() => {
-    if (subTab === 'ranking' && playlistActivaId) {
-      handleCargarRanking()
-      rankingIntervalRef.current = setInterval(handleCargarRanking, 10000)
-    }
+    if (subTab !== 'Ranking' || !playlistActivaId) return
+    clearInterval(rankingIntervalRef.current)
+    rankingIntervalRef.current = setInterval(handleCargarRanking, 10000)
     return () => clearInterval(rankingIntervalRef.current)
   }, [subTab, playlistActivaId, handleCargarRanking])
 
-  // ── Cartones ──────────────────────────────────────────────────────────────────
+  // ─── Cartones (estado) ──────────────────────────────────────────────────────
 
-  const handleCargarEstado = useCallback(async () => {
+  async function handleCargarEstado() {
     if (!playlistActivaId) return
     setLoadingEstado(true)
     try {
-      setEstado(await getEstadoEvento(playlistActivaId))
-    } catch {
-      setError('Error al cargar el estado del evento')
+      const data = await getEstadoEvento(playlistActivaId)
+      setEstado(data)
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoadingEstado(false)
     }
-  }, [playlistActivaId])
-
-  useEffect(() => {
-    if (subTab === 'cartones' && playlistActivaId) handleCargarEstado()
-  }, [subTab, playlistActivaId, handleCargarEstado])
-
-  async function handleResetear() {
-    if (!confirmReset) { setConfirmReset(true); return }
-    try {
-      await resetEvento(playlistActivaId)
-      setConfirmReset(false)
-      setExito('Evento reseteado correctamente')
-      handleCargarEstado()
-    } catch {
-      setError('Error al resetear el evento')
-    }
   }
 
-  async function handleEliminarCartones() {
-    if (!confirmEliminarCartones) { setConfirmEliminarCartones(true); return }
-    setLoadingEliminarCartones(true)
-    try {
-      await deleteCartonesByPlaylist(playlistActivaId)
-      setConfirmEliminarCartones(false)
-      setEstado(null)
-      setExito('✓ Cartones eliminados')
-    } catch {
-      setError('Error al eliminar los cartones')
-    } finally {
-      setLoadingEliminarCartones(false)
-    }
-  }
+  // ─── Invitados ──────────────────────────────────────────────────────────────
 
-  // ── Invitados ─────────────────────────────────────────────────────────────────
-
-  const handleCargarInvitados = useCallback(async () => {
+  async function handleCargarInvitados() {
     if (!playlistActivaId) return
     setLoadingInvitados(true)
     try {
-      const [lista, sobrantes] = await Promise.all([
+      const [inv, sobrantes] = await Promise.all([
         getInvitados(playlistActivaId),
         getCartonesSobrantes(playlistActivaId),
       ])
-      setInvitados(lista)
+      setInvitados(inv)
       setCartonesSobrantes(sobrantes)
-    } catch {
-      setError('Error al cargar invitados')
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoadingInvitados(false)
     }
-  }, [playlistActivaId])
-
-  useEffect(() => {
-    if (subTab === 'invitados' && playlistActivaId) handleCargarInvitados()
-  }, [subTab, playlistActivaId, handleCargarInvitados])
-
-  const filteredInvitados = useMemo(() => {
-    if (!buscadorInv.trim()) return invitados
-    const q = normalizarStr(buscadorInv)
-    return invitados.filter(
-      (inv) => normalizarStr(inv.nombre).includes(q) || normalizarStr(inv.apellido).includes(q)
-    )
-  }, [invitados, buscadorInv])
-
-  async function handleCargarLista() {
-    const lista = parsearLista(txtLista)
-    if (!lista.length) { setError('La lista está vacía o tiene un formato incorrecto'); return }
-    if (invitados.length > 0) { setConfirmReemplazar(true); return }
-    await ejecutarCargaLista(lista)
   }
 
   async function ejecutarCargaLista(lista) {
     setLoadingCarga(true)
-    setConfirmReemplazar(false)
     try {
       await insertInvitadosBatch(lista, playlistActivaId)
-      setTxtLista('')
-      setExito(`✓ ${lista.length} invitados cargados`)
       await handleCargarInvitados()
-    } catch {
-      setError('Error al cargar la lista')
+      setTxtLista('')
+      setConfirmReemplazar(false)
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoadingCarga(false)
     }
+  }
+
+  function handleCargarLista() {
+    const lista = parsearLista(txtLista)
+    if (lista.length === 0) { setError('Formato inválido. Usá: Nombre[Tab]Apellido por línea.'); return }
+    if (invitados.length > 0) { setConfirmReemplazar(true); return }
+    ejecutarCargaLista(lista)
   }
 
   async function handlePreasignar() {
     setLoadingPreasignar(true)
     setProgresoPreasignar('')
     try {
-      const result = await preasignarCartones(playlistActivaId, (n, total) => {
-        setProgresoPreasignar(`Asignando ${n} de ${total}...`)
-      })
-      setExito(`✓ ${result.asignados} invitados asignados · ${result.sobrantes} cartones sobrantes`)
+      const result = await preasignarCartones(playlistActivaId, (i, total) =>
+        setProgresoPreasignar(`Asignando... ${i}/${total}`)
+      )
+      setProgresoPreasignar(`✓ ${result.asignados} asignados. Sobrantes: ${result.sobrantes}`)
       await handleCargarInvitados()
-    } catch (err) {
-      setError(err.message ?? 'Error al pre-asignar cartones')
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoadingPreasignar(false)
-      setProgresoPreasignar('')
     }
   }
 
-  async function handleGuardarCambioCarton(inv) {
+  async function handleCambiarCarton(inv) {
     if (!nuevoCartonId) return
     try {
       await cambiarCarton(inv.id, nuevoCartonId, inv.nombre, inv.apellido, inv.carton_id)
       setEditandoId(null)
       setNuevoCartonId('')
       await handleCargarInvitados()
-    } catch {
-      setError('Error al cambiar el cartón')
-    }
-  }
-
-  async function handleResetearInvitado(inv) {
-    if (confirmResetearId !== inv.id) { setConfirmResetearId(inv.id); return }
-    try {
-      await resetearAsignadoAt(inv.id)
-      setConfirmResetearId(null)
-      await handleCargarInvitados()
-    } catch {
-      setError('Error al resetear el invitado')
+    } catch (e) {
+      setError(e.message)
     }
   }
 
   async function handleEliminarInvitado(inv) {
-    if (confirmEliminarId !== inv.id) { setConfirmEliminarId(inv.id); return }
     try {
       await eliminarInvitado(inv.id, inv.carton_id)
       setConfirmEliminarId(null)
       await handleCargarInvitados()
-    } catch {
-      setError('Error al eliminar el invitado')
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  async function handleResetearSesion(invitadoId) {
+    try {
+      await resetearAsignadoAt(invitadoId)
+      setConfirmResetearId(null)
+      await handleCargarInvitados()
+    } catch (e) {
+      setError(e.message)
     }
   }
 
   async function handleAgregarInvitado() {
     const { nombre, apellido, cartonId } = formNuevo
-    if (!nombre.trim() || !apellido.trim()) { setError('Nombre y apellido son obligatorios'); return }
+    if (!nombre.trim() || !apellido.trim()) { setError('Completá nombre y apellido.'); return }
     setLoadingFormNuevo(true)
     try {
       await agregarInvitado(nombre.trim(), apellido.trim(), playlistActivaId, cartonId || null)
       setFormNuevo({ nombre: '', apellido: '', cartonId: '' })
       setMostrandoFormNuevo(false)
       await handleCargarInvitados()
-    } catch {
-      setError('Error al agregar el invitado')
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoadingFormNuevo(false)
     }
   }
 
-  async function handleDesasignar() {
-    setLoadingDesasignar(true)
+  // ── Delete batch invitados ──────────────────────────────────────────────────
+  function toggleSelectForDelete(id) {
+    setSelectedForDelete((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function handleDeleteBatch() {
+    setLoadingDeleteBatch(true)
     try {
-      const ids = filteredInvitados
-        .filter((inv) => seleccionados.has(inv.id) && inv.carton_id)
-        .map((inv) => inv.id)
-      if (ids.length) await desasignarCartones(ids)
-      setModalDesasignar(false)
-      setSeleccionados(new Set())
+      const ids = [...selectedForDelete]
+      const cartonIds = invitados
+        .filter((inv) => ids.includes(inv.id) && inv.carton_id)
+        .map((inv) => inv.carton_id)
+      await eliminarInvitadosBatch(ids, cartonIds)
+      setSelectedForDelete(new Set())
+      setConfirmDeleteBatch(false)
+      setDeleteMode(false)
       await handleCargarInvitados()
-    } catch {
-      setError('Error al desasignar cartones')
+    } catch (e) {
+      setError(e.message)
     } finally {
-      setLoadingDesasignar(false)
+      setLoadingDeleteBatch(false)
     }
   }
 
+  // ── Toggle oculto ───────────────────────────────────────────────────────────
   async function handleToggleOculto(inv) {
     try {
       await toggleOcultoInvitado(inv.id, !inv.oculto)
       await handleCargarInvitados()
-    } catch {
-      setError('Error al cambiar visibilidad del invitado')
+    } catch (e) {
+      setError(e.message)
     }
   }
 
-  async function handleGenerarPDF() {
-    setGenerandoPDF(true)
+  // ── Imprimir HTML ───────────────────────────────────────────────────────────
+  async function handlePrintSelected() {
+    const ids = [...selectedForPrint]
+    const withCarton = invitados.filter((inv) => ids.includes(inv.id) && inv.carton_id)
+    if (withCarton.length === 0) { setError('Los invitados seleccionados no tienen cartón asignado.'); return }
+
     try {
-      const invSeleccionados = filteredInvitados.filter((inv) => seleccionados.has(inv.id))
-      const idsConCarton = invSeleccionados.filter((inv) => inv.carton_id).map((inv) => inv.carton_id)
-      const cartonesData = await getCartonesTrackIds(idsConCarton)
-      const trackMap = Object.fromEntries(cartonesData.map((c) => [c.id, c]))
+      const cartonData = await getCartonesTrackIds(withCarton.map((inv) => inv.carton_id))
+      const tracks = playlistActiva?.tracks ?? []
+      const cartones = withCarton.map((inv) => {
+        const c = cartonData.find((cd) => cd.id === inv.carton_id)
+        if (!c) return null
+        const trackObjs = (c.track_ids ?? [])
+          .map((tid) => tracks.find((t) => t.id === tid))
+          .filter(Boolean)
+        return { numero: c.numero, nombre: inv.nombre, apellido: inv.apellido, tracks: trackObjs }
+      }).filter(Boolean)
 
-      const cartones = invSeleccionados
-        .filter((inv) => inv.carton_id && trackMap[inv.carton_id])
-        .map((inv) => {
-          const carton = trackMap[inv.carton_id]
-          const trackObjs = (carton.track_ids ?? []).map(
-            (tid) => tracks.find((t) => t.id === tid) ?? { name: tid, artist: '' }
-          )
-          return {
-            numero: carton.numero,
-            nombre: inv.nombre,
-            apellido: inv.apellido,
-            tracks: trackObjs,
-          }
-        })
-
-      await imprimirCartones(cartones, setProgresoImprimir)
-      setModalImprimir(false)
-      setSeleccionados(new Set())
-    } catch (err) {
-      setError(err?.message ?? 'Error al generar el PDF')
-    } finally {
-      setGenerandoPDF(false)
-      setProgresoImprimir('')
+      printCartones(cartones, columnas, filas)
+    } catch (e) {
+      setError(e.message)
     }
   }
 
-  function badgeInvitado(inv) {
-    if (!inv.carton_id) return <span className={styles.badgeGris}>⚪ Sin cartón</span>
-    if (!inv.asignado_at) return <span className={styles.badgeAmarillo}>🟡 Asignado</span>
-    return <span className={styles.badgeVerde}>🟢 Activo</span>
-  }
+  // ── Simulación ──────────────────────────────────────────────────────────────
+  const handleCargarSim = useCallback(async () => {
+    if (!playlistActivaId) return
+    setLoadingSim(true)
+    try {
+      const data = await getSimulacionData(playlistActivaId)
+      setSimData(data)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoadingSim(false)
+    }
+  }, [playlistActivaId])
+
+  useEffect(() => {
+    if (!simActivada || subTab !== 'Simulación') {
+      clearInterval(simIntervalRef.current)
+      return
+    }
+    handleCargarSim()
+    simIntervalRef.current = setInterval(handleCargarSim, 10000)
+    return () => clearInterval(simIntervalRef.current)
+  }, [simActivada, subTab, handleCargarSim])
+
+  // ── Búsqueda invitados ──────────────────────────────────────────────────────
+  const invFiltrados = invitados.filter((inv) => {
+    if (!buscadorInv.trim()) return true
+    return normalizarStr(`${inv.nombre} ${inv.apellido}`).includes(normalizarStr(buscadorInv))
+  })
+
+  // ─── RENDER ─────────────────────────────────────────────────────────────────
 
   return (
     <div className={styles.container}>
-      <ErrorBanner message={error} onDismiss={() => setError('')} />
 
-      {/* ── Sección 1: Playlist activa ─────────────────────────────────────── */}
+      {/* Error global */}
+      {error && (
+        <div style={{
+          padding: '10px 14px',
+          background: '#2a1010',
+          color: 'var(--danger)',
+          fontSize: 13,
+          borderLeft: '3px solid var(--danger)',
+        }}>
+          {error}
+          <button style={{ marginLeft: 10, color: 'var(--muted)' }} onClick={() => setError('')}>✕</button>
+        </div>
+      )}
+
+      {/* ── Playlist activa ── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Playlist activa</h2>
-        <select className={styles.select} value={playlistActivaId} onChange={handleCambiarPlaylist}>
-          <option value="">— Seleccioná una playlist —</option>
-          {playlists.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-        {playlistActiva && (
-          <div className={styles.playlistInfo}>
-            <span className={styles.playlistName}>{playlistActiva.name}</span>
-            <span className={styles.badge}>✓ Activa</span>
-            <span className={styles.trackCount}>{tracks.length} temas disponibles</span>
+        <div className={styles.activaBox}>
+          <div className={styles.activaSelectRow}>
+            <select
+              className={styles.select}
+              value={playlistActivaId}
+              onChange={(e) => handleSetPlaylistActiva(e.target.value)}
+              disabled={settingActiva}
+            >
+              <option value="">Seleccionar playlist...</option>
+              {playlists.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
           </div>
-        )}
+          {playlistActiva && (
+            <div className={styles.activaInfo}>
+              {playlistActiva.tracks?.length ?? 0} canciones disponibles
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* ── Sección 2: Generar cartones ────────────────────────────────────── */}
+      {/* ── Generador de cartones ── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Generar cartones</h2>
-        <div className={styles.inputRow}>
-          <label className={styles.label}>Formato</label>
-          <select className={styles.select} value={formato} onChange={(e) => setFormato(e.target.value)}>
-            <option value="3x5">3×5 — 15 temas por cartón (horizontal)</option>
-            <option value="4x4">4×4 — 16 temas por cartón (vertical)</option>
-          </select>
+
+        <div className={styles.gridRow}>
+          <Stepper label="Filas" value={filas} onChange={setFilas} min={1} max={5} />
+          <Stepper label="Columnas" value={columnas} onChange={setColumnas} min={1} max={5} />
         </div>
-        <p className={styles.hint}>Se generarán cartones de {formatoConfig.label}</p>
-        <div className={styles.inputRow}>
-          <label className={styles.label}>Cantidad de cartones</label>
-          <div className={styles.stepper}>
-            <button type="button" className={styles.stepBtn} onClick={() => setCantidad((c) => Math.max(10, c - 10))}>−</button>
-            <input
-              type="number"
-              className={styles.numberInput}
-              value={cantidad}
-              min={10}
-              max={500}
-              onChange={(e) => {
-                const v = Number(e.target.value)
-                if (!isNaN(v)) setCantidad(Math.max(10, Math.min(500, v)))
-              }}
-            />
-            <button type="button" className={styles.stepBtn} onClick={() => setCantidad((c) => Math.min(500, c + 10))}>+</button>
-          </div>
+
+        <div className={styles.gridHint}>
+          Se generarán cartones de {filas}×{columnas} ({totalCeldas} temas por cartón)
+          {tracksDisponibles > 0 && tracksDisponibles < totalCeldas && (
+            <span style={{ color: 'var(--danger)', marginLeft: 8 }}>
+              — la playlist solo tiene {tracksDisponibles} canciones
+            </span>
+          )}
         </div>
-        {progreso && <p className={styles.progreso}>Generando {progreso.insertados} de {progreso.total}...</p>}
+
+        <div className={styles.inputRow}>
+          <Stepper label="Cantidad" value={cantidad} onChange={setCantidad} min={1} max={9999} />
+        </div>
+
+        {progreso && <p className={styles.progreso}>{progreso}</p>}
         {exito && <p className={styles.exitoMsg}>{exito}</p>}
-        <button className={styles.primaryBtn} onClick={handleGenerarCartones} disabled={generando}>
-          {generando ? 'Generando...' : '🎲 Generar cartones para el evento'}
+
+        <button
+          className={styles.primaryBtn}
+          onClick={handleGenerarCartones}
+          disabled={generando || !playlistActivaId}
+        >
+          {generando ? 'Generando...' : `Generar ${cantidad} cartones para el evento`}
         </button>
       </section>
 
-      {/* ── Sección 3: Conducir el juego (sub-tabs) ───────────────────────── */}
+      {/* ── Sub-tabs ── */}
       <section className={`${styles.section} ${styles.sectionLast}`}>
-        <h2 className={styles.sectionTitle}>Conducir el juego</h2>
-
         <div className={styles.subTabsNav}>
-          {[
-            { id: 'canciones', label: 'Canciones' },
-            { id: 'ranking',   label: 'Ranking' },
-            { id: 'cartones',  label: 'Cartones' },
-            { id: 'invitados', label: 'Invitados' },
-          ].map((t) => (
+          {SUB_TABS.map((t) => (
             <button
-              key={t.id}
-              className={`${styles.subTabBtn} ${subTab === t.id ? styles.subTabActive : ''}`}
-              onClick={() => setSubTab(t.id)}
+              key={t}
+              className={`${styles.subTabBtn} ${subTab === t ? styles.subTabActive : ''}`}
+              onClick={() => setSubTab(t)}
             >
-              {t.label}
+              {t}
             </button>
           ))}
         </div>
 
-        {/* ── Sub-tab: Canciones ──────────────────────────────────────────── */}
-        {subTab === 'canciones' && (
-          <div className={styles.subTabContent}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.hint}>
-                {loadingCanciones ? 'Cargando...' : `${cantadas.size} de ${tracks.length} canciones sonaron`}
-              </span>
-              <div className={styles.actionRow}>
-                <button
-                  className={`${styles.secondaryBtn} ${confirmResetCanciones ? styles.dangerBtn : ''}`}
-                  onClick={handleResetCanciones}
-                  disabled={!playlistActivaId}
-                >
-                  {confirmResetCanciones ? '¿Confirmar?' : '↩ Resetear juego'}
-                </button>
-                {confirmResetCanciones && (
-                  <button className={styles.cancelBtn} onClick={() => setConfirmResetCanciones(false)}>Cancelar</button>
-                )}
-              </div>
-            </div>
-            {!playlistActivaId ? (
-              <p className={styles.hint}>Seleccioná una playlist primero</p>
-            ) : tracks.length === 0 ? (
-              <p className={styles.hint}>La playlist no tiene temas</p>
-            ) : (
-              <div className={styles.trackList}>
-                {tracks.map((track) => {
-                  const isActive = cantadas.has(track.id)
-                  const tState = toggleStates[track.id]
-                  const tError = toggleErrors[track.id]
-                  return (
-                    <div key={track.id} className={`${styles.trackRow} ${isActive ? styles.trackRowActive : ''}`}>
-                      <div className={styles.trackInfo}>
-                        <span className={styles.trackName}>{track.name}</span>
-                        <span className={styles.trackArtist}>{track.artist}</span>
-                        {tError && <span className={styles.toggleError}>{tError}</span>}
-                      </div>
-                      <button
-                        className={[
-                          styles.toggle,
-                          isActive ? styles.toggleOn : '',
-                          tState === 'loading' ? styles.toggleLoading : '',
-                          tState === 'ok' ? styles.toggleOk : '',
-                        ].join(' ')}
-                        onClick={() => handleToggleCancion(track.id, isActive)}
-                        disabled={tState === 'loading'}
-                        aria-label={isActive ? 'Desactivar' : 'Activar'}
-                      >
-                        {tState === 'loading' ? (
-                          <span className={styles.toggleSpinner} />
-                        ) : tState === 'ok' ? (
-                          <span className={styles.toggleCheck}>✓</span>
-                        ) : (
-                          <span className={styles.toggleThumb} />
-                        )}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+        <div className={styles.subTabContent}>
+          {subTab === 'Canciones' && renderCanciones()}
+          {subTab === 'Ranking' && renderRanking()}
+          {subTab === 'Cartones' && renderCartones()}
+          {subTab === 'Invitados' && renderInvitados()}
+          {subTab === 'Simulación' && renderSimulacion()}
+        </div>
+      </section>
+    </div>
+  )
+
+  // ─── Renders de sub-tabs ─────────────────────────────────────────────────────
+
+  function renderCanciones() {
+    const tracks = playlistActiva?.tracks ?? []
+
+    return (
+      <>
+        <div className={styles.actionRow}>
+          <button className={styles.secondaryBtn} onClick={handleCargarCanciones} disabled={loadingCanciones}>
+            {loadingCanciones ? 'Cargando...' : '↺ Actualizar'}
+          </button>
+          {cantadas.size > 0 && !confirmResetCanciones && (
+            <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={() => setConfirmResetCanciones(true)}>
+              Reiniciar canciones
+            </button>
+          )}
+          {confirmResetCanciones && (
+            <>
+              <span style={{ fontSize: 13, color: 'var(--muted)' }}>¿Reiniciar todas?</span>
+              <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={handleResetCanciones}>Confirmar</button>
+              <button className={styles.cancelBtn} onClick={() => setConfirmResetCanciones(false)}>Cancelar</button>
+            </>
+          )}
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--muted)' }}>
+            {cantadas.size}/{tracks.length} cantadas
+          </span>
+        </div>
+
+        {!playlistActiva ? (
+          <p className={styles.hint}>Seleccioná una playlist activa para ver las canciones.</p>
+        ) : tracks.length === 0 ? (
+          <p className={styles.hint}>La playlist no tiene canciones.</p>
+        ) : (
+          <div className={styles.trackList}>
+            {tracks.map((track) => {
+              const activa = cantadas.has(track.id)
+              const st = toggleStates[track.id]
+              const err = toggleErrors[track.id]
+              return (
+                <div key={track.id} className={`${styles.trackRow} ${activa ? styles.trackRowActive : ''}`}>
+                  <div className={styles.trackInfo}>
+                    <span className={styles.trackName}>{track.name}</span>
+                    <span className={styles.trackArtist}>{track.artist}</span>
+                    {err && <span className={styles.toggleError}>{err}</span>}
+                  </div>
+                  <button
+                    className={`${styles.toggle} ${activa ? styles.toggleOn : ''} ${st === 'loading' ? styles.toggleLoading : ''} ${st === 'ok' ? styles.toggleOk : ''}`}
+                    onClick={() => st !== 'loading' && handleToggleCancion(track.id, !activa)}
+                    disabled={st === 'loading'}
+                  >
+                    {st === 'loading'
+                      ? <span className={styles.toggleSpinner} />
+                      : st === 'ok'
+                        ? <span className={styles.toggleCheck}>✓</span>
+                        : <span className={styles.toggleThumb} />
+                    }
+                  </button>
+                </div>
+              )
+            })}
           </div>
         )}
+      </>
+    )
+  }
 
-        {/* ── Sub-tab: Ranking ────────────────────────────────────────────── */}
-        {subTab === 'ranking' && (
-          <div className={styles.subTabContent}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.hint}>Se actualiza cada 10 seg</span>
-              <button className={styles.secondaryBtn} onClick={handleCargarRanking} disabled={loadingRanking || !playlistActivaId}>
-                🔄 Actualizar
-              </button>
-            </div>
-            {!playlistActivaId ? (
-              <p className={styles.hint}>Seleccioná una playlist primero</p>
-            ) : !ranking ? (
-              <p className={styles.hint}>Cargando ranking...</p>
-            ) : ranking.length === 0 ? (
-              <p className={styles.hint}>No hay cartones entregados aún</p>
-            ) : (
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={{ width: 36 }}></th>
-                    <th>Invitado</th>
-                    <th style={{ width: 70 }}>Canciones</th>
-                    <th style={{ width: 120 }}>Progreso</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranking.map((row, i) => (
-                    <tr key={row.numero} className={row.tachadas === row.total ? styles.trBingo : ''}>
-                      <td className={styles.rankPos}>{MEDAL[i] ?? i + 1}</td>
-                      <td>
-                        {row.nombre ?? `Cartón #${row.numero}`}
-                        {row.tachadas === row.total && <span className={styles.bingoBadge}>BINGO 🎉</span>}
-                      </td>
-                      <td className={styles.rankScore}>{row.tachadas}/{row.total}</td>
-                      <td>
+  function renderRanking() {
+    return (
+      <>
+        <div className={styles.actionRow}>
+          <button className={styles.secondaryBtn} onClick={handleCargarRanking} disabled={loadingRanking}>
+            {loadingRanking ? 'Cargando...' : '↺ Actualizar'}
+          </button>
+          <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 'auto' }}>Auto-actualiza cada 10s</span>
+        </div>
+
+        {!ranking ? (
+          <p className={styles.hint}>Cargando ranking...</p>
+        ) : ranking.length === 0 ? (
+          <p className={styles.hint}>No hay invitados con cartón activo todavía.</p>
+        ) : (
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Invitado</th>
+                <th>Cartón</th>
+                <th>Progreso</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranking.map((row, i) => {
+                const bingo = row.tachadas === row.total
+                return (
+                  <tr key={row.numero} className={bingo ? styles.trBingo : ''}>
+                    <td className={styles.rankPos}>{MEDAL[i] ?? i + 1}</td>
+                    <td>
+                      {row.nombre}
+                      {bingo && <span className={styles.bingoBadge}>BINGO</span>}
+                    </td>
+                    <td>#{row.numero}</td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <span className={styles.rankScore}>{row.tachadas}/{row.total}</span>
                         <div className={styles.progressBar}>
                           <div className={styles.progressFill} style={{ width: `${row.pct}%` }} />
                         </div>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </>
+    )
+  }
+
+  function renderCartones() {
+    return (
+      <>
+        <div className={styles.actionRow}>
+          <button className={styles.secondaryBtn} onClick={handleCargarEstado} disabled={loadingEstado}>
+            {loadingEstado ? 'Cargando...' : '↺ Actualizar'}
+          </button>
+          {estado && !confirmEliminarCartones && (
+            <button
+              className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
+              onClick={() => setConfirmEliminarCartones(true)}
+            >
+              Eliminar todos los cartones
+            </button>
+          )}
+          {confirmEliminarCartones && (
+            <>
+              <span style={{ fontSize: 13, color: 'var(--muted)' }}>¿Eliminar todos?</span>
+              <button
+                className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
+                onClick={async () => {
+                  try {
+                    await deleteCartonesByPlaylist(playlistActivaId)
+                    setEstado(null)
+                    setConfirmEliminarCartones(false)
+                  } catch (e) { setError(e.message) }
+                }}
+              >
+                Confirmar
+              </button>
+              <button className={styles.cancelBtn} onClick={() => setConfirmEliminarCartones(false)}>Cancelar</button>
+            </>
+          )}
+        </div>
+
+        {!estado ? (
+          <p className={styles.hint}>Sin datos. Generá cartones primero.</p>
+        ) : (
+          <>
+            <div className={styles.statsRow}>
+              <div className={styles.stat}>
+                <span className={styles.statValue}>{estado.total}</span>
+                <span className={styles.statLabel}>Total</span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statValue}>{estado.entregados}</span>
+                <span className={styles.statLabel}>Entregados</span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statValue}>{estado.disponibles}</span>
+                <span className={styles.statLabel}>Disponibles</span>
+              </div>
+            </div>
+
+            {estado.lista.length > 0 && (
+              <table className={styles.table}>
+                <thead>
+                  <tr><th>Cartón</th><th>Invitado</th><th>Entregado</th></tr>
+                </thead>
+                <tbody>
+                  {estado.lista.map((e) => (
+                    <tr key={e.id}>
+                      <td>#{e.numero}</td>
+                      <td>{e.nombre_invitado}</td>
+                      <td style={{ fontSize: 12, color: 'var(--muted)' }}>
+                        {e.entregado_at ? new Date(e.entregado_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—'}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-          </div>
+          </>
         )}
+      </>
+    )
+  }
 
-        {/* ── Sub-tab: Cartones ───────────────────────────────────────────── */}
-        {subTab === 'cartones' && (
-          <div className={styles.subTabContent}>
-            <div className={styles.sectionHeader}>
-              <div className={styles.actionRow}>
-                <button className={styles.secondaryBtn} onClick={handleCargarEstado} disabled={loadingEstado || !playlistActivaId}>
-                  🔄 Actualizar
-                </button>
-                <button
-                  className={`${styles.secondaryBtn} ${confirmReset ? styles.dangerBtn : ''}`}
-                  onClick={handleResetear}
-                  disabled={!playlistActivaId || !estado}
-                >
-                  {confirmReset ? '¿Confirmar reset?' : '↩ Resetear evento'}
-                </button>
-                {confirmReset && (
-                  <button className={styles.cancelBtn} onClick={() => setConfirmReset(false)}>Cancelar</button>
-                )}
-                <button
-                  className={`${styles.secondaryBtn} ${confirmEliminarCartones ? styles.dangerBtn : ''}`}
-                  onClick={handleEliminarCartones}
-                  disabled={!playlistActivaId || !estado || loadingEliminarCartones}
-                >
-                  {loadingEliminarCartones ? 'Eliminando...' : confirmEliminarCartones ? '¿Eliminar todo?' : '🗑 Eliminar cartones'}
-                </button>
-                {confirmEliminarCartones && (
-                  <button className={styles.cancelBtn} onClick={() => setConfirmEliminarCartones(false)}>Cancelar</button>
-                )}
-              </div>
-            </div>
-            {!estado ? (
-              <p className={styles.hint}>
-                {playlistActivaId ? 'Hacé clic en Actualizar para ver el estado' : 'Seleccioná una playlist primero'}
-              </p>
-            ) : (
-              <>
-                <div className={styles.statsRow}>
-                  <div className={styles.stat}><span className={styles.statValue}>{estado.total}</span><span className={styles.statLabel}>Total</span></div>
-                  <div className={styles.stat}><span className={styles.statValue}>{estado.entregados}</span><span className={styles.statLabel}>Entregados</span></div>
-                  <div className={styles.stat}><span className={styles.statValue}>{estado.disponibles}</span><span className={styles.statLabel}>Disponibles</span></div>
-                </div>
-                {estado.lista.filter((c) => c.entregado).length > 0 && (
-                  <table className={styles.table}>
-                    <thead><tr><th>#</th><th>Invitado</th><th>Hora</th></tr></thead>
-                    <tbody>
-                      {estado.lista.filter((c) => c.entregado).map((c) => (
-                        <tr key={c.id}>
-                          <td>{c.numero}</td>
-                          <td>{c.nombre_invitado ?? '—'}</td>
-                          <td>{c.entregado_at ? new Date(c.entregado_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </>
-            )}
-          </div>
-        )}
+  function renderInvitados() {
+    return (
+      <>
+        {/* Acciones principales */}
+        <div className={styles.actionRow}>
+          <button
+            className={styles.secondaryBtn}
+            onClick={() => { setMostrandoFormNuevo(true); setDeleteMode(false) }}
+          >
+            + Agregar
+          </button>
+          <button
+            className={`${styles.secondaryBtn} ${deleteMode ? styles.dangerBtn : ''}`}
+            onClick={() => {
+              setDeleteMode(!deleteMode)
+              setSelectedForDelete(new Set())
+              setConfirmDeleteBatch(false)
+              setMostrandoFormNuevo(false)
+            }}
+          >
+            {deleteMode ? 'Cancelar' : 'Eliminar'}
+          </button>
+          <button className={styles.secondaryBtn} onClick={handleCargarInvitados} disabled={loadingInvitados}>
+            ↺
+          </button>
+        </div>
 
-        {/* ── Sub-tab: Invitados ──────────────────────────────────────────── */}
-        {subTab === 'invitados' && (
-          <div className={styles.subTabContent}>
-            {!playlistActivaId ? (
-              <p className={styles.hint}>Seleccioná una playlist primero</p>
-            ) : (
-              <>
-                {/* ── Carga masiva ── */}
-                <div className={styles.invSection}>
-                  <p className={styles.label}>Cargar lista (TSV: Nombre↹Apellido)</p>
-                  <textarea
-                    className={styles.textarea}
-                    placeholder={'Laura\tDesmaras Luzuriaga\nGarlo\tDesmaras Luzuriaga'}
-                    value={txtLista}
-                    onChange={(e) => setTxtLista(e.target.value)}
-                    rows={5}
-                  />
-                  {confirmReemplazar && (
-                    <div className={styles.confirmBox}>
-                      <p className={styles.hint}>Ya hay {invitados.length} invitados. ¿Reemplazar la lista?</p>
-                      <div className={styles.actionRow}>
-                        <button
-                          className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
-                          onClick={() => ejecutarCargaLista(parsearLista(txtLista))}
-                          disabled={loadingCarga}
-                        >
-                          Reemplazar
-                        </button>
-                        <button className={styles.cancelBtn} onClick={() => setConfirmReemplazar(false)}>Cancelar</button>
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    className={styles.secondaryBtn}
-                    onClick={handleCargarLista}
-                    disabled={loadingCarga || !txtLista.trim()}
-                  >
-                    {loadingCarga ? 'Cargando...' : 'Cargar lista'}
-                  </button>
-                </div>
-
-                {/* ── Pre-asignación ── */}
-                <div className={styles.invSection}>
-                  <div className={styles.sectionHeader}>
-                    <div>
-                      <p className={styles.label}>Pre-asignar cartones</p>
-                      <p className={styles.hint}>Se asignan en el mismo orden que la lista</p>
-                    </div>
-                    <button
-                      className={styles.secondaryBtn}
-                      onClick={handlePreasignar}
-                      disabled={loadingPreasignar || !invitados.length}
-                    >
-                      {loadingPreasignar ? progresoPreasignar || 'Asignando...' : 'Pre-asignar cartones'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* ── Tabla ── */}
-                <div className={styles.invSection}>
-                  <div className={styles.sectionHeader}>
-                    <p className={styles.label}>{invitados.length} invitados</p>
-                    <button
-                      className={styles.secondaryBtn}
-                      onClick={() => { setMostrandoFormNuevo((v) => !v); setFormNuevo({ nombre: '', apellido: '', cartonId: '' }) }}
-                    >
-                      {mostrandoFormNuevo ? 'Cancelar' : '+ Agregar'}
-                    </button>
-                  </div>
-
-                  {mostrandoFormNuevo && (
-                    <div className={styles.formNuevo}>
-                      <input
-                        className={styles.invInput}
-                        placeholder="Nombre"
-                        value={formNuevo.nombre}
-                        onChange={(e) => setFormNuevo((f) => ({ ...f, nombre: e.target.value }))}
-                      />
-                      <input
-                        className={styles.invInput}
-                        placeholder="Apellido"
-                        value={formNuevo.apellido}
-                        onChange={(e) => setFormNuevo((f) => ({ ...f, apellido: e.target.value }))}
-                      />
-                      <select
-                        className={styles.invSelect}
-                        value={formNuevo.cartonId}
-                        onChange={(e) => setFormNuevo((f) => ({ ...f, cartonId: e.target.value }))}
-                      >
-                        <option value="">Sin cartón</option>
-                        {cartonesSobrantes.map((c) => (
-                          <option key={c.id} value={c.id}>#{String(c.numero).padStart(3, '0')}</option>
-                        ))}
-                      </select>
-                      <button className={styles.primaryBtn} onClick={handleAgregarInvitado} disabled={loadingFormNuevo}>
-                        {loadingFormNuevo ? 'Guardando...' : 'Agregar'}
-                      </button>
-                    </div>
-                  )}
-
-                  {loadingInvitados ? (
-                    <p className={styles.hint}>Cargando...</p>
-                  ) : invitados.length === 0 ? (
-                    <p className={styles.hint}>No hay invitados cargados</p>
-                  ) : (
-                    <>
-                      {/* ── Barra de acciones de impresión ── */}
-                      <div className={styles.printBar}>
-                        <label className={styles.selectAllLabel}>
-                          <input
-                            type="checkbox"
-                            checked={
-                              filteredInvitados.length > 0 &&
-                              filteredInvitados.every((inv) => seleccionados.has(inv.id))
-                            }
-                            ref={(el) => {
-                              if (el) {
-                                el.indeterminate =
-                                  filteredInvitados.some((inv) => seleccionados.has(inv.id)) &&
-                                  !filteredInvitados.every((inv) => seleccionados.has(inv.id))
-                              }
-                            }}
-                            onChange={(e) => {
-                              setSeleccionados((prev) => {
-                                const next = new Set(prev)
-                                if (e.target.checked) {
-                                  filteredInvitados.forEach((inv) => next.add(inv.id))
-                                } else {
-                                  filteredInvitados.forEach((inv) => next.delete(inv.id))
-                                }
-                                return next
-                              })
-                            }}
-                          />
-                          Seleccionar todos
-                        </label>
-                        <button
-                          className={styles.printBtn}
-                          disabled={seleccionados.size === 0}
-                          onClick={() => setModalImprimir(true)}
-                        >
-                          🖨️ Imprimir seleccionados
-                        </button>
-                        <button
-                          className={styles.printBtn}
-                          style={{ background: 'none', border: '1px solid #444', color: seleccionados.size === 0 ? '#444' : 'var(--danger)' }}
-                          disabled={seleccionados.size === 0}
-                          onClick={() => setModalDesasignar(true)}
-                        >
-                          Desasignar cartón
-                        </button>
-                        <input
-                          className={styles.buscadorInv}
-                          style={{ flex: 1, minWidth: 120 }}
-                          placeholder="🔍 buscar..."
-                          value={buscadorInv}
-                          onChange={(e) => setBuscadorInv(e.target.value)}
-                        />
-                      </div>
-
-                      <table className={styles.table}>
-                        <thead>
-                          <tr>
-                            <th className={styles.checkCell}></th>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>Cartón</th>
-                            <th>Estado</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredInvitados.map((inv) => (
-                            <>
-                              <tr key={inv.id} className={inv.oculto ? styles.trOculto : ''}>
-                                <td className={styles.checkCell}>
-                                  <input
-                                    type="checkbox"
-                                    checked={seleccionados.has(inv.id)}
-                                    onChange={(e) => {
-                                      setSeleccionados((prev) => {
-                                        const next = new Set(prev)
-                                        if (e.target.checked) next.add(inv.id)
-                                        else next.delete(inv.id)
-                                        return next
-                                      })
-                                    }}
-                                  />
-                                </td>
-                                <td>{inv.nombre}</td>
-                                <td>{inv.apellido}</td>
-                                <td>{inv.carton_id ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}` : '—'}</td>
-                                <td>{badgeInvitado(inv)}</td>
-                                <td>
-                                  <div className={styles.actionRow}>
-                                    <button
-                                      className={`${styles.iconBtn} ${inv.oculto ? styles.iconBtnOculto : ''}`}
-                                      onClick={() => handleToggleOculto(inv)}
-                                      title={inv.oculto ? 'Hacer visible en lista' : 'Ocultar de lista'}
-                                    >{inv.oculto ? '🙈' : '👁'}</button>
-                                    <button
-                                      className={styles.iconBtn}
-                                      onClick={() => {
-                                        setEditandoId(editandoId === inv.id ? null : inv.id)
-                                        setNuevoCartonId('')
-                                        setConfirmEliminarId(null)
-                                        setConfirmResetearId(null)
-                                      }}
-                                      title="Cambiar cartón"
-                                    >✏</button>
-                                    {inv.asignado_at && (
-                                      confirmResetearId === inv.id ? (
-                                        <>
-                                          <button
-                                            className={`${styles.iconBtn} ${styles.dangerIconBtn}`}
-                                            onClick={() => handleResetearInvitado(inv)}
-                                            title="Confirmar reset"
-                                          >Sí</button>
-                                          <button
-                                            className={styles.iconBtn}
-                                            onClick={() => setConfirmResetearId(null)}
-                                          >No</button>
-                                        </>
-                                      ) : (
-                                        <button
-                                          className={styles.iconBtn}
-                                          onClick={() => {
-                                            setConfirmResetearId(inv.id)
-                                            setConfirmEliminarId(null)
-                                            setEditandoId(null)
-                                          }}
-                                          title={`Resetear sesión de ${inv.nombre}`}
-                                        >↺</button>
-                                      )
-                                    )}
-                                    {confirmEliminarId === inv.id ? (
-                                      <>
-                                        <button
-                                          className={`${styles.iconBtn} ${styles.dangerIconBtn}`}
-                                          onClick={() => handleEliminarInvitado(inv)}
-                                        >Sí</button>
-                                        <button
-                                          className={styles.iconBtn}
-                                          onClick={() => setConfirmEliminarId(null)}
-                                        >No</button>
-                                      </>
-                                    ) : (
-                                      <button
-                                        className={styles.iconBtn}
-                                        onClick={() => {
-                                          setConfirmEliminarId(inv.id)
-                                          setEditandoId(null)
-                                          setConfirmResetearId(null)
-                                        }}
-                                        title={`Eliminar ${inv.nombre}`}
-                                      >🗑</button>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                              {editandoId === inv.id && (
-                                <tr key={`edit-${inv.id}`} className={styles.editRow}>
-                                  <td colSpan={6}>
-                                    <div className={styles.editInline}>
-                                      <span className={styles.hint}>
-                                        Cartón actual: {inv.carton_id ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}` : 'Sin asignar'}
-                                      </span>
-                                      <select
-                                        className={styles.invSelect}
-                                        value={nuevoCartonId}
-                                        onChange={(e) => setNuevoCartonId(e.target.value)}
-                                      >
-                                        <option value="">— Seleccioná un cartón —</option>
-                                        {cartonesSobrantes.map((c) => (
-                                          <option key={c.id} value={c.id}>#{String(c.numero).padStart(3, '0')}</option>
-                                        ))}
-                                      </select>
-                                      <button
-                                        className={styles.secondaryBtn}
-                                        onClick={() => handleGuardarCambioCarton(inv)}
-                                        disabled={!nuevoCartonId}
-                                      >
-                                        Guardar cambio
-                                      </button>
-                                      <button className={styles.cancelBtn} onClick={() => setEditandoId(null)}>
-                                        Cancelar
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )}
-                            </>
-                          ))}
-                        </tbody>
-                      </table>
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* ── Modal: confirmar desasignación ────────────────────────────────── */}
-      {modalDesasignar && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalBox}>
-            <p className={styles.modalTitle}>
-              ¿Desasignar cartón de {seleccionados.size} {seleccionados.size === 1 ? 'invitado' : 'invitados'}?
-            </p>
-            <p className={styles.hint} style={{ fontSize: 12 }}>
-              Los cartones quedan libres y se pueden reasignar con "Pre-asignar cartones".
-            </p>
-            <ul className={styles.modalList}>
-              {filteredInvitados
-                .filter((inv) => seleccionados.has(inv.id))
-                .map((inv) => (
-                  <li key={inv.id}>
-                    {inv.carton_id
-                      ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}`
-                      : '(sin cartón)'}{' '}
-                    · {inv.nombre} {inv.apellido}
-                  </li>
-                ))}
-            </ul>
-            <div className={styles.modalActions}>
-              <button className={styles.cancelBtn} onClick={() => setModalDesasignar(false)} disabled={loadingDesasignar}>
-                Cancelar
-              </button>
+        {/* Delete mode bar */}
+        {deleteMode && (
+          <div className={styles.deleteModeBar}>
+            <span className={styles.deleteModeCount}>
+              {selectedForDelete.size} seleccionados
+            </span>
+            {!confirmDeleteBatch ? (
               <button
                 className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
-                onClick={handleDesasignar}
-                disabled={loadingDesasignar}
+                disabled={selectedForDelete.size === 0}
+                onClick={() => setConfirmDeleteBatch(true)}
               >
-                {loadingDesasignar ? 'Desasignando...' : 'Confirmar'}
+                Eliminar seleccionados
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal: confirmar impresión ─────────────────────────────────────── */}
-      {modalImprimir && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalBox}>
-            {generandoPDF ? (
-              <p className={styles.progresoImprimir}>{progresoImprimir || 'Preparando...'}</p>
             ) : (
               <>
-                <p className={styles.modalTitle}>
-                  ¿Imprimir {seleccionados.size} {seleccionados.size === 1 ? 'cartón' : 'cartones'}?
-                </p>
-                <ul className={styles.modalList}>
-                  {filteredInvitados
-                    .filter((inv) => seleccionados.has(inv.id))
-                    .map((inv) => (
-                      <li key={inv.id}>
-                        {inv.carton_id
-                          ? `#${String(inv.cartones?.numero ?? '?').padStart(3, '0')}`
-                          : '—'}{' '}
-                        · {inv.nombre} {inv.apellido}
-                      </li>
-                    ))}
-                </ul>
-                <div className={styles.modalActions}>
-                  <button className={styles.cancelBtn} onClick={() => setModalImprimir(false)}>
-                    Cancelar
-                  </button>
-                  <button className={styles.primaryBtn} onClick={handleGenerarPDF}>
-                    Generar PDF
-                  </button>
-                </div>
+                <span style={{ fontSize: 13, color: 'var(--muted)' }}>¿Confirmar eliminación?</span>
+                <button
+                  className={`${styles.secondaryBtn} ${styles.dangerBtn}`}
+                  onClick={handleDeleteBatch}
+                  disabled={loadingDeleteBatch}
+                >
+                  {loadingDeleteBatch ? 'Eliminando...' : 'Confirmar'}
+                </button>
+                <button className={styles.cancelBtn} onClick={() => setConfirmDeleteBatch(false)}>Cancelar</button>
               </>
             )}
           </div>
+        )}
+
+        {/* Formulario agregar */}
+        {mostrandoFormNuevo && (
+          <div className={styles.formNuevo}>
+            <input
+              className={styles.invInput}
+              placeholder="Nombre"
+              value={formNuevo.nombre}
+              onChange={(e) => setFormNuevo((p) => ({ ...p, nombre: e.target.value }))}
+            />
+            <input
+              className={styles.invInput}
+              placeholder="Apellido"
+              value={formNuevo.apellido}
+              onChange={(e) => setFormNuevo((p) => ({ ...p, apellido: e.target.value }))}
+            />
+            <select
+              className={styles.invSelect}
+              value={formNuevo.cartonId}
+              onChange={(e) => setFormNuevo((p) => ({ ...p, cartonId: e.target.value }))}
+            >
+              <option value="">Sin cartón</option>
+              {cartonesSobrantes.map((c) => (
+                <option key={c.id} value={c.id}>#{c.numero}</option>
+              ))}
+            </select>
+            <button className={styles.secondaryBtn} onClick={handleAgregarInvitado} disabled={loadingFormNuevo}>
+              {loadingFormNuevo ? '...' : 'Agregar'}
+            </button>
+            <button className={styles.cancelBtn} onClick={() => setMostrandoFormNuevo(false)}>Cancelar</button>
+          </div>
+        )}
+
+        {/* Carga masiva */}
+        <div className={styles.invSection}>
+          <span className={styles.label}>Carga masiva (Nombre[Tab]Apellido por línea)</span>
+          <textarea
+            className={styles.textarea}
+            rows={4}
+            placeholder={'Juan\tGarcía\nMaría\tLópez'}
+            value={txtLista}
+            onChange={(e) => setTxtLista(e.target.value)}
+          />
+          {confirmReemplazar ? (
+            <div className={styles.confirmBox}>
+              <span style={{ fontSize: 13 }}>Esto reemplazará la lista actual de {invitados.length} invitados. ¿Continuar?</span>
+              <div className={styles.actionRow}>
+                <button className={`${styles.secondaryBtn} ${styles.dangerBtn}`} onClick={() => ejecutarCargaLista(parsearLista(txtLista))} disabled={loadingCarga}>
+                  {loadingCarga ? 'Cargando...' : 'Reemplazar'}
+                </button>
+                <button className={styles.cancelBtn} onClick={() => setConfirmReemplazar(false)}>Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <button className={styles.secondaryBtn} onClick={handleCargarLista} disabled={loadingCarga || !txtLista.trim()}>
+              {loadingCarga ? 'Cargando...' : 'Cargar lista'}
+            </button>
+          )}
         </div>
-      )}
-    </div>
-  )
+
+        {/* Pre-asignar */}
+        <div className={styles.invSection}>
+          <div className={styles.actionRow}>
+            <button className={styles.secondaryBtn} onClick={handlePreasignar} disabled={loadingPreasignar}>
+              {loadingPreasignar ? 'Asignando...' : 'Pre-asignar cartones en orden'}
+            </button>
+            {progresoPreasignar && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{progresoPreasignar}</span>}
+          </div>
+        </div>
+
+        {/* Buscador */}
+        <input
+          className={styles.buscadorInv}
+          placeholder="Buscar invitado..."
+          value={buscadorInv}
+          onChange={(e) => setBuscadorInv(e.target.value)}
+        />
+
+        {/* Impresión */}
+        <div className={styles.printBar}>
+          <label className={styles.selectAllLabel}>
+            <input
+              type="checkbox"
+              checked={selectedForPrint.size === invitados.filter((i) => i.carton_id).length && invitados.filter((i) => i.carton_id).length > 0}
+              onChange={(e) => {
+                const withCarton = invitados.filter((i) => i.carton_id).map((i) => i.id)
+                setSelectedForPrint(e.target.checked ? new Set(withCarton) : new Set())
+              }}
+            />
+            Todos
+          </label>
+          <button
+            className={styles.printBtn}
+            onClick={handlePrintSelected}
+            disabled={selectedForPrint.size === 0}
+          >
+            Imprimir seleccionados ({selectedForPrint.size})
+          </button>
+        </div>
+
+        {/* Tabla de invitados */}
+        {loadingInvitados ? (
+          <p className={styles.hint}>Cargando...</p>
+        ) : invFiltrados.length === 0 ? (
+          <p className={styles.hint}>{buscadorInv ? 'Sin resultados.' : 'No hay invitados cargados.'}</p>
+        ) : (
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                {(deleteMode || selectedForPrint.size > 0 || true) && <th style={{ width: 32 }} />}
+                <th>Invitado</th>
+                <th>Cartón</th>
+                <th>Estado</th>
+                <th style={{ width: 80 }} />
+              </tr>
+            </thead>
+            <tbody>
+              {invFiltrados.map((inv) => {
+                const isEditing = editandoId === inv.id
+                const isConfirmEl = confirmEliminarId === inv.id
+                const isConfirmReset = confirmResetearId === inv.id
+                const estadoBadge = inv.asignado_at
+                  ? <span className={styles.badgeVerde}>● Activo</span>
+                  : inv.carton_id
+                    ? <span className={styles.badgeAmarillo}>● Asignado</span>
+                    : <span className={styles.badgeGris}>○ Sin cartón</span>
+
+                if (isEditing) {
+                  return (
+                    <tr key={inv.id} className={styles.editRow}>
+                      <td colSpan={5}>
+                        <div className={styles.editInline}>
+                          <span style={{ fontSize: 13 }}>{inv.nombre} {inv.apellido}</span>
+                          <select
+                            className={styles.invSelect}
+                            value={nuevoCartonId}
+                            onChange={(e) => setNuevoCartonId(e.target.value)}
+                          >
+                            <option value="">Seleccionar cartón...</option>
+                            {cartonesSobrantes.map((c) => (
+                              <option key={c.id} value={c.id}>#{c.numero}</option>
+                            ))}
+                          </select>
+                          <button className={styles.iconBtn} onClick={() => handleCambiarCarton(inv)} disabled={!nuevoCartonId}>Asignar</button>
+                          <button className={styles.cancelBtn} onClick={() => { setEditandoId(null); setNuevoCartonId('') }}>Cancelar</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                }
+
+                return (
+                  <tr key={inv.id} className={inv.oculto ? styles.trOculto : ''}>
+                    <td className={styles.checkCell}>
+                      {deleteMode ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedForDelete.has(inv.id)}
+                          onChange={() => toggleSelectForDelete(inv.id)}
+                        />
+                      ) : inv.carton_id ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedForPrint.has(inv.id)}
+                          onChange={(e) => {
+                            setSelectedForPrint((prev) => {
+                              const next = new Set(prev)
+                              e.target.checked ? next.add(inv.id) : next.delete(inv.id)
+                              return next
+                            })
+                          }}
+                        />
+                      ) : null}
+                    </td>
+                    <td>{inv.nombre} {inv.apellido}</td>
+                    <td>{inv.cartones?.numero ? `#${inv.cartones.numero}` : '—'}</td>
+                    <td>{estadoBadge}</td>
+                    <td>
+                      {isConfirmEl ? (
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button className={`${styles.iconBtn} ${styles.dangerIconBtn}`} onClick={() => handleEliminarInvitado(inv)}>✓</button>
+                          <button className={styles.cancelBtn} onClick={() => setConfirmEliminarId(null)}>✕</button>
+                        </div>
+                      ) : isConfirmReset ? (
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button className={`${styles.iconBtn} ${styles.dangerIconBtn}`} onClick={() => handleResetearSesion(inv.id)}>✓</button>
+                          <button className={styles.cancelBtn} onClick={() => setConfirmResetearId(null)}>✕</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button className={styles.iconBtn} title="Cambiar cartón" onClick={() => { setEditandoId(inv.id); setNuevoCartonId('') }}>✎</button>
+                          <button className={styles.iconBtn} title="Reset sesión" onClick={() => setConfirmResetearId(inv.id)}>↺</button>
+                          <button className={`${styles.iconBtn} ${inv.oculto ? styles.iconBtnOculto : ''}`} title={inv.oculto ? 'Mostrar' : 'Ocultar'} onClick={() => handleToggleOculto(inv)}>
+                            {inv.oculto ? '👁' : '🙈'}
+                          </button>
+                          <button className={`${styles.iconBtn} ${styles.dangerIconBtn}`} title="Eliminar" onClick={() => setConfirmEliminarId(inv.id)}>✕</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </>
+    )
+  }
+
+  function renderSimulacion() {
+    return (
+      <>
+        <div className={styles.simHeader}>
+          <div className={styles.simToggleRow}>
+            <span>Activar simulación</span>
+            <button
+              className={`${styles.toggle} ${simActivada ? styles.toggleOn : ''}`}
+              onClick={() => setSimActivada(!simActivada)}
+            >
+              <span className={styles.toggleThumb} />
+            </button>
+            <span>{simActivada ? 'SÍ' : 'NO'}</span>
+          </div>
+          {simActivada && (
+            <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 'auto' }}>Auto-actualiza cada 10s</span>
+          )}
+        </div>
+
+        {!simActivada ? (
+          <div className={styles.simOff}>
+            Activá la simulación para ver los cartones de todos los invitados en tiempo real.
+          </div>
+        ) : loadingSim ? (
+          <p className={styles.hint}>Cargando...</p>
+        ) : !simData || simData.length === 0 ? (
+          <p className={styles.hint}>No hay invitados con cartón asignado todavía.</p>
+        ) : (
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Invitado</th>
+                <th>Cartón</th>
+                <th>Temas</th>
+                <th>Progreso</th>
+              </tr>
+            </thead>
+            <tbody>
+              {simData.map((row, i) => {
+                const bingo = row.tachadas === row.total
+                return (
+                  <tr key={row.numero} className={bingo ? styles.trBingo : ''}>
+                    <td className={styles.rankPos}>{MEDAL[i] ?? i + 1}</td>
+                    <td>
+                      {row.nombre}
+                      {bingo && <span className={styles.bingoBadge}>BINGO</span>}
+                    </td>
+                    <td>#{row.numero}</td>
+                    <td className={styles.rankScore}>{row.tachadas}/{row.total}</td>
+                    <td>
+                      <div className={styles.progressBar}>
+                        <div className={styles.progressFill} style={{ width: `${row.pct}%` }} />
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </>
+    )
+  }
 }
