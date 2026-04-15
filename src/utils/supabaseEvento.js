@@ -52,11 +52,18 @@ export async function setPlaylistActiva(playlistId) {
 // ─── Cartones ─────────────────────────────────────────────────────────────────
 
 export async function deleteCartonesByPlaylist(playlistId) {
-  const { error } = await supabase
+  // Primero nullear la FK en invitados para no violar la constraint
+  const { error: e1 } = await supabase
+    .from('invitados')
+    .update({ carton_id: null, asignado_at: null, sesion_valida: false })
+    .eq('playlist_id', playlistId)
+  if (e1) throw e1
+
+  const { error: e2 } = await supabase
     .from('cartones')
     .delete()
     .eq('playlist_id', playlistId)
-  if (error) throw error
+  if (e2) throw e2
 }
 
 export async function insertCartonesBatch(cartones, onProgress) {
