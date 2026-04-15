@@ -70,11 +70,16 @@ export function EventManager({ onAbrirEvento, onGestionarPlaylists }) {
 
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Mis Eventos</h2>
-          {!mostrarForm && (
-            <button className={styles.newBtn} onClick={() => setMostrarForm(true)}>
-              + Nuevo evento
+          <div className={styles.headerActions}>
+            <button className={styles.playlistsBtn} onClick={onGestionarPlaylists}>
+              Playlists
             </button>
-          )}
+            {!mostrarForm && (
+              <button className={styles.newBtn} onClick={() => setMostrarForm(true)}>
+                + Nuevo evento
+              </button>
+            )}
+          </div>
         </div>
 
         {mostrarForm && (
@@ -133,7 +138,7 @@ export function EventManager({ onAbrirEvento, onGestionarPlaylists }) {
                     </div>
                   ) : (
                     <>
-                      <button className={styles.itemMain} onClick={() => onAbrirEvento(ev.id)}>
+                      <button className={styles.itemMain} onClick={() => onAbrirEvento(ev.id, ev.nombre)}>
                         <span className={styles.itemNombre}>{ev.nombre}</span>
                         <div className={styles.itemMeta}>
                           <span className={styles.itemCode}>{eventoCode(ev.id)}</span>
@@ -157,11 +162,6 @@ export function EventManager({ onAbrirEvento, onGestionarPlaylists }) {
           </ul>
         )}
 
-        <div className={styles.footer}>
-          <button className={styles.playlistsLink} onClick={onGestionarPlaylists}>
-            Mis playlists →
-          </button>
-        </div>
       </div>
     </div>
   )

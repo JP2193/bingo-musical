@@ -71,6 +71,7 @@ function AppInner() {
   const { user, loading, signIn, signOut } = useAuth()
   const [screen, setScreen] = useState('events') // 'events' | 'eventDetail' | 'playlists'
   const [selectedEventoId, setSelectedEventoId] = useState(null)
+  const [selectedEventoNombre, setSelectedEventoNombre] = useState('')
 
   if (loading) {
     return <div className={styles.loadingScreen}><span>Cargando...</span></div>
@@ -80,26 +81,28 @@ function AppInner() {
     return <LoginScreen onSignIn={signIn} />
   }
 
-  function handleAbrirEvento(id) {
+  function handleAbrirEvento(id, nombre) {
     setSelectedEventoId(id)
+    setSelectedEventoNombre(nombre ?? '')
     setScreen('eventDetail')
   }
 
   function handleVolverAEventos() {
     setSelectedEventoId(null)
+    setSelectedEventoNombre('')
     setScreen('events')
   }
 
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <button
-          className={styles.logo}
-          onClick={screen !== 'events' ? handleVolverAEventos : undefined}
-          style={screen !== 'events' ? { cursor: 'pointer' } : {}}
-        >
-          Bingo Musical
-        </button>
+        {screen === 'events' ? (
+          <span className={styles.logo}>Bingo Musical</span>
+        ) : (
+          <button className={styles.headerBackBtn} onClick={handleVolverAEventos}>
+            ‹ Eventos
+          </button>
+        )}
         <div className={styles.userArea}>
           <span className={styles.userEmail}>{user.email}</span>
           <button className={styles.logoutBtn} onClick={signOut}>Salir</button>
@@ -117,22 +120,12 @@ function AppInner() {
           <EventDetail
             eventoId={selectedEventoId}
             onVolver={handleVolverAEventos}
+            onGestionarPlaylists={() => setScreen('playlists')}
+            onNombreChange={(nombre) => setSelectedEventoNombre(nombre)}
           />
         )}
         {screen === 'playlists' && (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ padding: '8px 24px', borderBottom: '1px solid #1e1e1e', flexShrink: 0 }}>
-              <button
-                onClick={() => setScreen('events')}
-                style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 13 }}
-              >
-                ← Volver a eventos
-              </button>
-            </div>
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <PlaylistTab />
-            </div>
-          </div>
+          <PlaylistTab />
         )}
       </main>
     </div>

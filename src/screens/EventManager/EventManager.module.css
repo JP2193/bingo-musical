@@ -38,6 +38,29 @@
   gap: 12px;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.playlistsBtn {
+  padding: 8px 14px;
+  background: none;
+  border: 1px solid #3a3a3a;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+
+.playlistsBtn:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
 .sectionTitle {
   font-family: var(--font-display);
   font-size: 20px;
@@ -269,26 +292,6 @@
   color: var(--danger) !important;
 }
 
-.footer {
-  padding-top: 12px;
-  border-top: 1px solid #1e1e1e;
-}
-
-.playlistsLink {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 13px;
-  cursor: pointer;
-  padding: 0;
-  transition: color var(--transition);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.playlistsLink:hover {
-  color: var(--white);
-}
 
 @media (max-width: 768px) {
   .inner {

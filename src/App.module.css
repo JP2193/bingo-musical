@@ -167,10 +167,30 @@
   letter-spacing: 0.08em;
   color: var(--yellow);
   white-space: nowrap;
-  background: none;
-  border: none;
   cursor: default;
-  padding: 0;
+}
+
+.headerBackBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  background: none;
+  border: 1px solid #3a3a3a;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+  white-space: nowrap;
+}
+
+.headerBackBtn:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  background: rgba(255, 214, 0, 0.05);
 }
 
 /* ─── User area ──────────────────────────────────────────────────────────────── */

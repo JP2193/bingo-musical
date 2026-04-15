@@ -82,7 +82,7 @@ function Stepper({ value, onChange, min = 1, max, label }) {
   )
 }
 
-export function EventDetail({ eventoId, onVolver }) {
+export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombreChange }) {
   // ── Evento ─────────────────────────────────────────────────────────────────
   const [evento, setEvento] = useState(null)
   const [playlists, setPlaylists] = useState([])
@@ -210,6 +210,7 @@ export function EventDetail({ eventoId, onVolver }) {
       await actualizarEvento(eventoId, { nombre })
       setEvento((prev) => ({ ...prev, nombre }))
       setEditandoNombre(false)
+      onNombreChange?.(nombre)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -610,7 +611,6 @@ export function EventDetail({ eventoId, onVolver }) {
 
       {/* Header del evento */}
       <div className={styles.eventoHeader}>
-        <button className={styles.backBtn} onClick={onVolver}>← Eventos</button>
         <div className={styles.eventoTitleWrap}>
           {editandoNombre ? (
             <input
@@ -699,6 +699,9 @@ export function EventDetail({ eventoId, onVolver }) {
             {playlistActiva && (
               <p className={styles.hint}>{playlistActiva.tracks?.length ?? 0} canciones disponibles</p>
             )}
+            <button className={styles.nuevaPlaylistBtn} onClick={onGestionarPlaylists}>
+              + Crear nueva playlist →
+            </button>
           </div>
         </section>
 
