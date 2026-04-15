@@ -160,17 +160,31 @@
 .userArea {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   margin-left: auto;
 }
 
-.userEmail {
-  font-size: 13px;
+.eventCodeBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.eventCodeLabel {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   color: var(--muted);
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.eventCodeValue {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--yellow);
+  letter-spacing: 0.08em;
 }
 
 .logoutBtn {
@@ -215,8 +229,8 @@
     padding-bottom: 8px;
   }
 
-  .userEmail {
-    display: none;
+  .eventCodeValue {
+    font-size: 12px;
   }
 
   .tabs {

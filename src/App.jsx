@@ -54,6 +54,8 @@ function AppInner() {
     return <LoginScreen onSignIn={signIn} />
   }
 
+  const eventCode = user.id.substring(0, 8).toUpperCase()
+
   return (
     <div className={styles.app}>
       <header className={styles.header}>
@@ -70,7 +72,10 @@ function AppInner() {
           ))}
         </nav>
         <div className={styles.userArea}>
-          <span className={styles.userEmail}>{user.email}</span>
+          <div className={styles.eventCodeBadge}>
+            <span className={styles.eventCodeLabel}>ID EVENTO</span>
+            <span className={styles.eventCodeValue}>{eventCode}</span>
+          </div>
           <button className={styles.logoutBtn} onClick={signOut}>Salir</button>
         </div>
       </header>
