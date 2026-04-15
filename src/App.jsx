@@ -72,6 +72,7 @@ function AppInner() {
           ))}
         </nav>
         <div className={styles.userArea}>
+          <span className={styles.userEmail}>{user.email}</span>
           <div className={styles.eventCodeBadge}>
             <span className={styles.eventCodeLabel}>ID EVENTO</span>
             <span className={styles.eventCodeValue}>{eventCode}</span>

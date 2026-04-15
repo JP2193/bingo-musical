@@ -164,6 +164,15 @@
   margin-left: auto;
 }
 
+.userEmail {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .eventCodeBadge {
   display: flex;
   flex-direction: column;
@@ -227,6 +236,10 @@
   .userArea {
     margin-left: 0;
     padding-bottom: 8px;
+  }
+
+  .userEmail {
+    display: none;
   }
 
   .eventCodeValue {

@@ -7,9 +7,11 @@ async function getUserId() {
 }
 
 export async function getPlaylists() {
+  const userId = await getUserId()
   const { data, error } = await supabase
     .from('playlists')
     .select('id, name, tracks, saved_at')
+    .eq('user_id', userId)
     .order('saved_at', { ascending: true })
   if (error) throw error
   return data ?? []
@@ -34,26 +36,32 @@ export async function createPlaylist(name, tracks) {
 }
 
 export async function updatePlaylist(id, name, tracks) {
+  const userId = await getUserId()
   const { error } = await supabase
     .from('playlists')
     .update({ name: name.trim(), tracks })
     .eq('id', id)
+    .eq('user_id', userId)
   if (error) handleSupabaseError(error, name)
 }
 
 export async function renamePlaylist(id, name) {
+  const userId = await getUserId()
   const { error } = await supabase
     .from('playlists')
     .update({ name: name.trim() })
     .eq('id', id)
+    .eq('user_id', userId)
   if (error) handleSupabaseError(error, name)
 }
 
 export async function deletePlaylist(id) {
+  const userId = await getUserId()
   const { error } = await supabase
     .from('playlists')
     .delete()
     .eq('id', id)
+    .eq('user_id', userId)
   if (error) throw error
 }
 
