@@ -33,13 +33,6 @@ import styles from './EventoTab.module.css'
 
 const MEDAL = ['🥇', '🥈', '🥉']
 
-const GRID_PRESETS = [
-  { key: '3x3', cols: 3, rows: 3, label: '3×3 — 9 canciones' },
-  { key: '4x3', cols: 4, rows: 3, label: '4×3 — 12 canciones' },
-  { key: '4x4', cols: 4, rows: 4, label: '4×4 — 16 canciones' },
-  { key: '5x3', cols: 5, rows: 3, label: '5×3 — 15 canciones' },
-  { key: '5x4', cols: 5, rows: 4, label: '5×4 — 20 canciones' },
-]
 
 function parsearLista(texto) {
   return texto
@@ -102,7 +95,8 @@ export function EventoTab() {
   const [settingActiva, setSettingActiva] = useState(false)
 
   // ── Generador ──────────────────────────────────────────────────────────────
-  const [gridPreset, setGridPreset] = useState('4x4')
+  const [filas, setFilas] = useState(4)
+  const [columnas, setColumnas] = useState(4)
   const [cantidad, setCantidad] = useState(120)
   const [generando, setGenerando] = useState(false)
   const [progreso, setProgreso] = useState(null)
@@ -222,8 +216,7 @@ export function EventoTab() {
 
   // ─── Generador de cartones ──────────────────────────────────────────────────
 
-  const preset = GRID_PRESETS.find((p) => p.key === gridPreset) ?? GRID_PRESETS[2]
-  const totalCeldas = preset.cols * preset.rows
+  const totalCeldas = filas * columnas
   const tracksDisponibles = playlistActiva?.tracks?.length ?? 0
 
   async function handleGenerarCartones() {
@@ -240,7 +233,7 @@ export function EventoTab() {
 
     try {
       const tracks = playlistActiva.tracks
-      const cards = generateAllUniqueCards(tracks, preset.cols, preset.rows, cantidad)
+      const cards = generateAllUniqueCards(tracks, columnas, filas, cantidad)
 
       await deleteCartonesByPlaylist(playlistActivaId)
       const rows = cards.map((trackIds, i) => ({
@@ -638,21 +631,13 @@ export function EventoTab() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Generar cartones</h2>
 
-        <div className={styles.inputRow}>
-          <span className={styles.label}>Tamaño del cartón</span>
-          <select
-            className={styles.select}
-            value={gridPreset}
-            onChange={(e) => setGridPreset(e.target.value)}
-          >
-            {GRID_PRESETS.map((p) => (
-              <option key={p.key} value={p.key}>{p.label}</option>
-            ))}
-          </select>
+        <div className={styles.gridRow}>
+          <Stepper label="Columnas" value={columnas} onChange={setColumnas} min={2} max={4} />
+          <Stepper label="Filas" value={filas} onChange={setFilas} min={2} max={5} />
         </div>
 
         <div className={styles.gridHint}>
-          Cada cartón tendrá {totalCeldas} canciones en una grilla de {preset.cols}×{preset.rows}
+          Cartones de {columnas}×{filas} — {totalCeldas} canciones por cartón
           {tracksDisponibles > 0 && tracksDisponibles < totalCeldas && (
             <span style={{ color: 'var(--danger)', marginLeft: 8 }}>
               — la playlist solo tiene {tracksDisponibles} canciones
