@@ -400,7 +400,7 @@
     min-width: 0;
     border-right: none;
     border-bottom: 1px solid #1e1e1e;
-    max-height: 180px;
+    max-height: 210px;
   }
 
   .trackListHeader,
@@ -414,5 +414,16 @@
     padding-left: 12px;
     padding-right: 12px;
     flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .headerActions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .nameInput {
+    min-width: 0;
+    width: 100%;
   }
 }

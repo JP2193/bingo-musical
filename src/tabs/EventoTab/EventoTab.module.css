@@ -283,6 +283,13 @@
   display: flex;
   gap: 0;
   border-bottom: 1px solid #1e1e1e;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.subTabsNav::-webkit-scrollbar {
+  display: none;
 }
 
 .subTabBtn {
@@ -297,6 +304,8 @@
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
   margin-bottom: -1px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .subTabBtn:hover {
@@ -934,5 +943,33 @@
   .sectionHeader {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .subTabBtn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .activaSelectRow {
+    flex-wrap: wrap;
+  }
+
+  .trackList {
+    max-height: none;
+  }
+
+  .gridRow {
+    gap: 14px;
+  }
+
+  .actionRow {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 }
