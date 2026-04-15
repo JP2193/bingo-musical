@@ -1,7 +1,8 @@
 import { AppProvider } from './store/AppContext'
 import { useAuth } from './hooks/useAuth'
 import { PlaylistTab } from './tabs/PlaylistTab/PlaylistTab'
-import { EventoTab } from './tabs/EventoTab/EventoTab'
+import { EventManager } from './screens/EventManager/EventManager'
+import { EventDetail } from './screens/EventDetail/EventDetail'
 import styles from './App.module.css'
 import { useState } from 'react'
 
@@ -66,14 +67,10 @@ function LoginScreen({ onSignIn }) {
   )
 }
 
-const TABS = [
-  { id: 'playlist', label: 'Playlist' },
-  { id: 'evento', label: 'Evento' },
-]
-
 function AppInner() {
   const { user, loading, signIn, signOut } = useAuth()
-  const [activeTab, setActiveTab] = useState('playlist')
+  const [screen, setScreen] = useState('events') // 'events' | 'eventDetail' | 'playlists'
+  const [selectedEventoId, setSelectedEventoId] = useState(null)
 
   if (loading) {
     return <div className={styles.loadingScreen}><span>Cargando...</span></div>
@@ -83,36 +80,60 @@ function AppInner() {
     return <LoginScreen onSignIn={signIn} />
   }
 
-  const eventCode = user.id.substring(0, 8).toUpperCase()
+  function handleAbrirEvento(id) {
+    setSelectedEventoId(id)
+    setScreen('eventDetail')
+  }
+
+  function handleVolverAEventos() {
+    setSelectedEventoId(null)
+    setScreen('events')
+  }
 
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <span className={styles.logo}>Bingo Musical</span>
-        <nav className={styles.tabs}>
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              className={`${styles.tab} ${activeTab === tab.id ? styles.active : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+        <button
+          className={styles.logo}
+          onClick={screen !== 'events' ? handleVolverAEventos : undefined}
+          style={screen !== 'events' ? { cursor: 'pointer' } : {}}
+        >
+          Bingo Musical
+        </button>
         <div className={styles.userArea}>
           <span className={styles.userEmail}>{user.email}</span>
-          <div className={styles.eventCodeBadge}>
-            <span className={styles.eventCodeLabel}>ID EVENTO</span>
-            <span className={styles.eventCodeValue}>{eventCode}</span>
-          </div>
           <button className={styles.logoutBtn} onClick={signOut}>Salir</button>
         </div>
       </header>
 
       <main className={styles.main}>
-        {activeTab === 'playlist' && <PlaylistTab />}
-        {activeTab === 'evento' && <EventoTab />}
+        {screen === 'events' && (
+          <EventManager
+            onAbrirEvento={handleAbrirEvento}
+            onGestionarPlaylists={() => setScreen('playlists')}
+          />
+        )}
+        {screen === 'eventDetail' && selectedEventoId && (
+          <EventDetail
+            eventoId={selectedEventoId}
+            onVolver={handleVolverAEventos}
+          />
+        )}
+        {screen === 'playlists' && (
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ padding: '8px 24px', borderBottom: '1px solid #1e1e1e', flexShrink: 0 }}>
+              <button
+                onClick={() => setScreen('events')}
+                style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 13 }}
+              >
+                ← Volver a eventos
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <PlaylistTab />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

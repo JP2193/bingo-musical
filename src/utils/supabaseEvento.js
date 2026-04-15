@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { generateAllUniqueCards } from './bingo'
 
 async function getUserId() {
   const { data: { user } } = await supabase.auth.getUser()
@@ -24,68 +25,81 @@ export async function getPlaylists() {
   return data ?? []
 }
 
-// ─── Config: playlist activa ──────────────────────────────────────────────────
-
-export async function getNombreEvento() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return ''
-  const { data } = await supabase
-    .from('config')
-    .select('value')
-    .eq('user_id', user.id)
-    .eq('key', 'nombre_evento')
-    .maybeSingle()
-  return data?.value ?? ''
+async function getTracksDePlaylistLocal(playlistId) {
+  const { data, error } = await supabase
+    .from('playlists')
+    .select('tracks')
+    .eq('id', playlistId)
+    .single()
+  if (error) throw error
+  return data?.tracks ?? []
 }
 
-export async function setNombreEvento(nombre) {
+// ─── Eventos ──────────────────────────────────────────────────────────────────
+
+export async function getEventos() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const { data, error } = await supabase
+    .from('eventos')
+    .select('id, nombre, playlist_id, cols, rows, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function crearEvento(nombre) {
   const userId = await getUserId()
+  const { data, error } = await supabase
+    .from('eventos')
+    .insert({ user_id: userId, nombre })
+    .select('id, nombre, playlist_id, cols, rows, created_at')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function actualizarEvento(id, campos) {
   const { error } = await supabase
-    .from('config')
-    .upsert(
-      { user_id: userId, key: 'nombre_evento', value: nombre, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id,key' }
-    )
+    .from('eventos')
+    .update(campos)
+    .eq('id', id)
   if (error) throw error
 }
 
-export async function getPlaylistActiva() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return ''
-  const { data } = await supabase
-    .from('config')
-    .select('value')
-    .eq('user_id', user.id)
-    .eq('key', 'playlist_activa')
-    .maybeSingle()
-  return data?.value ?? ''
+export async function eliminarEvento(id) {
+  // Limpiar invitados/cartones en cascada via ON DELETE CASCADE en DB
+  const { error } = await supabase
+    .from('eventos')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
 }
 
-export async function setPlaylistActiva(playlistId) {
-  const userId = await getUserId()
-  const { error } = await supabase
-    .from('config')
-    .upsert(
-      { user_id: userId, key: 'playlist_activa', value: playlistId, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id,key' }
-    )
+export async function getEventoDetalle(id) {
+  const { data, error } = await supabase
+    .from('eventos')
+    .select('id, nombre, playlist_id, cols, rows, created_at')
+    .eq('id', id)
+    .single()
   if (error) throw error
+  return data
 }
 
 // ─── Cartones ─────────────────────────────────────────────────────────────────
 
-export async function deleteCartonesByPlaylist(playlistId) {
-  // Primero nullear la FK en invitados para no violar la constraint
+export async function deleteCartonesByEvento(eventoId) {
   const { error: e1 } = await supabase
     .from('invitados')
     .update({ carton_id: null, asignado_at: null, sesion_valida: false })
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
   if (e1) throw e1
 
   const { error: e2 } = await supabase
     .from('cartones')
     .delete()
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
   if (e2) throw e2
 }
 
@@ -105,16 +119,74 @@ export async function insertCartonesBatch(cartones, onProgress) {
   }
 }
 
-export async function getEstadoEvento(playlistId) {
+export async function generarCartones(eventoId, cols, rows, cantidad, playlistId, onProgress) {
+  const tracks = await getTracksDePlaylistLocal(playlistId)
+  const totalCeldas = cols * rows
+  if (tracks.length < totalCeldas) {
+    throw new Error(`La playlist tiene ${tracks.length} canciones pero el cartón necesita ${totalCeldas}.`)
+  }
+
+  const cards = generateAllUniqueCards(tracks, cols, rows, cantidad)
+
+  await deleteCartonesByEvento(eventoId)
+
+  // Guardar cols/rows en el evento
+  await actualizarEvento(eventoId, { cols, rows, playlist_id: playlistId })
+
+  const rowsData = cards.map((trackIds, i) => ({
+    numero: i + 1,
+    evento_id: eventoId,
+    track_ids: trackIds,
+  }))
+
+  await insertCartonesBatch(rowsData, onProgress)
+  return { total: cantidad }
+}
+
+export async function getMaxNumeroCarton(eventoId) {
+  const { data } = await supabase
+    .from('cartones')
+    .select('numero')
+    .eq('evento_id', eventoId)
+    .order('numero', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return data?.numero ?? 0
+}
+
+export async function generarCartonesAdicionales(eventoId, cantidad, onProgress) {
+  const evento = await getEventoDetalle(eventoId)
+  if (!evento.playlist_id) throw new Error('El evento no tiene playlist configurada.')
+
+  const tracks = await getTracksDePlaylistLocal(evento.playlist_id)
+  const totalCeldas = evento.cols * evento.rows
+  if (tracks.length < totalCeldas) {
+    throw new Error(`La playlist tiene ${tracks.length} canciones pero el cartón necesita ${totalCeldas}.`)
+  }
+
+  const lastNumero = await getMaxNumeroCarton(eventoId)
+  const cards = generateAllUniqueCards(tracks, evento.cols, evento.rows, cantidad)
+
+  const rowsData = cards.map((trackIds, i) => ({
+    numero: lastNumero + i + 1,
+    evento_id: eventoId,
+    track_ids: trackIds,
+  }))
+
+  await insertCartonesBatch(rowsData, onProgress)
+  return { generados: cantidad, desde: lastNumero + 1, hasta: lastNumero + cantidad }
+}
+
+export async function getEstadoEvento(eventoId) {
   const [{ data: cartones, error: e1 }, { data: invitados, error: e2 }] = await Promise.all([
     supabase
       .from('cartones')
       .select('id, numero')
-      .eq('playlist_id', playlistId),
+      .eq('evento_id', eventoId),
     supabase
       .from('invitados')
       .select('id, nombre, apellido, carton_id, asignado_at, cartones(numero)')
-      .eq('playlist_id', playlistId)
+      .eq('evento_id', eventoId)
       .not('asignado_at', 'is', null)
       .order('asignado_at', { ascending: true }),
   ])
@@ -147,56 +219,56 @@ export async function getCartonesTrackIds(cartonIds) {
 
 // ─── Canciones cantadas ───────────────────────────────────────────────────────
 
-export async function getCancionesCantadas(playlistId) {
+export async function getCancionesCantadas(eventoId) {
   const { data, error } = await supabase
     .from('canciones_cantadas')
     .select('track_id')
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
   if (error) throw error
   return new Set(data.map((c) => c.track_id))
 }
 
-export async function activarCancion(playlistId, trackId) {
+export async function activarCancion(eventoId, trackId) {
   const { error } = await supabase
     .from('canciones_cantadas')
-    .insert({ playlist_id: playlistId, track_id: trackId })
+    .insert({ evento_id: eventoId, track_id: trackId })
   if (error) throw error
 }
 
-export async function desactivarCancion(playlistId, trackId) {
+export async function desactivarCancion(eventoId, trackId) {
   const { error } = await supabase
     .from('canciones_cantadas')
     .delete()
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
     .eq('track_id', trackId)
   if (error) throw error
 }
 
-export async function resetCancionesCantadas(playlistId) {
+export async function resetCancionesCantadas(eventoId) {
   const { error } = await supabase
     .from('canciones_cantadas')
     .delete()
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
   if (error) throw error
 }
 
 // ─── Invitados ────────────────────────────────────────────────────────────────
 
-export async function getInvitados(playlistId) {
+export async function getInvitados(eventoId) {
   const { data, error } = await supabase
     .from('invitados')
     .select('id, nombre, apellido, carton_id, asignado_at, oculto, cartones(numero)')
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
     .order('orden', { ascending: true })
   if (error) throw error
   return data ?? []
 }
 
-export async function getCartonesSobrantes(playlistId) {
+export async function getCartonesSobrantes(eventoId) {
   const { data: asignados } = await supabase
     .from('invitados')
     .select('carton_id')
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
     .not('carton_id', 'is', null)
 
   const idsAsignados = asignados?.map((a) => a.carton_id).filter(Boolean) ?? []
@@ -204,7 +276,7 @@ export async function getCartonesSobrantes(playlistId) {
   let query = supabase
     .from('cartones')
     .select('id, numero')
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
     .order('numero', { ascending: true })
 
   if (idsAsignados.length > 0) {
@@ -216,27 +288,27 @@ export async function getCartonesSobrantes(playlistId) {
   return data ?? []
 }
 
-export async function getMaxOrden(playlistId) {
+export async function getMaxOrden(eventoId) {
   const { data } = await supabase
     .from('invitados')
     .select('orden')
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
     .order('orden', { ascending: false })
     .limit(1)
     .maybeSingle()
   return data?.orden ?? -1
 }
 
-export async function insertInvitadosBatch(lista, playlistId) {
+export async function insertInvitadosBatch(lista, eventoId) {
   const userId = await getUserId()
-  await supabase.from('invitados').delete().eq('playlist_id', playlistId)
+  await supabase.from('invitados').delete().eq('evento_id', eventoId)
 
   const rows = lista.map((inv, i) => ({
     user_id: userId,
     nombre: inv.nombre,
     apellido: inv.apellido,
     nombre_normalizado: normalizarStr(`${inv.nombre} ${inv.apellido}`),
-    playlist_id: playlistId,
+    evento_id: eventoId,
     orden: i,
   }))
 
@@ -247,16 +319,16 @@ export async function insertInvitadosBatch(lista, playlistId) {
   }
 }
 
-export async function preasignarCartones(playlistId, onProgress) {
+export async function preasignarCartones(eventoId, onProgress) {
   const { data: invitados, error: e1 } = await supabase
     .from('invitados')
     .select('id, nombre, apellido')
-    .eq('playlist_id', playlistId)
+    .eq('evento_id', eventoId)
     .is('carton_id', null)
     .order('orden', { ascending: true })
   if (e1) throw e1
 
-  const sobrantes = await getCartonesSobrantes(playlistId)
+  const sobrantes = await getCartonesSobrantes(eventoId)
 
   if (sobrantes.length < invitados.length) {
     throw new Error(
@@ -289,15 +361,15 @@ export async function cambiarCarton(invitadoId, nuevoCartonId, nombre, apellido,
     .eq('id', nuevoCartonId)
 }
 
-export async function agregarInvitado(nombre, apellido, playlistId, cartonId) {
+export async function agregarInvitado(nombre, apellido, eventoId, cartonId) {
   const userId = await getUserId()
-  const orden = (await getMaxOrden(playlistId)) + 1
+  const orden = (await getMaxOrden(eventoId)) + 1
   const { error } = await supabase.from('invitados').insert({
     user_id: userId,
     nombre,
     apellido,
     nombre_normalizado: normalizarStr(`${nombre} ${apellido}`),
-    playlist_id: playlistId,
+    evento_id: eventoId,
     carton_id: cartonId || null,
     orden,
   })
@@ -367,13 +439,13 @@ export async function toggleOcultoInvitado(id, oculto) {
 
 // ─── Ranking / Simulación ─────────────────────────────────────────────────────
 
-async function fetchDatosCartones(playlistId, filtroColumna) {
+async function fetchDatosCartones(eventoId, filtroColumna) {
   const [{ data: cantadas, error: e1 }, { data: invitados, error: e2 }] = await Promise.all([
-    supabase.from('canciones_cantadas').select('track_id').eq('playlist_id', playlistId),
+    supabase.from('canciones_cantadas').select('track_id').eq('evento_id', eventoId),
     supabase
       .from('invitados')
       .select('nombre, apellido, cartones(numero, track_ids)')
-      .eq('playlist_id', playlistId)
+      .eq('evento_id', eventoId)
       .not(filtroColumna, 'is', null),
   ])
   if (e1) throw e1
@@ -395,12 +467,10 @@ async function fetchDatosCartones(playlistId, filtroColumna) {
     .sort((a, b) => b.tachadas - a.tachadas)
 }
 
-// Solo invitados que abrieron sesión
-export async function getRankingCartones(playlistId) {
-  return fetchDatosCartones(playlistId, 'asignado_at')
+export async function getRankingCartones(eventoId) {
+  return fetchDatosCartones(eventoId, 'asignado_at')
 }
 
-// Todos los invitados con cartón asignado (sin importar si abrieron sesión)
-export async function getSimulacionData(playlistId) {
-  return fetchDatosCartones(playlistId, 'carton_id')
+export async function getSimulacionData(eventoId) {
+  return fetchDatosCartones(eventoId, 'carton_id')
 }

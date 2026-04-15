@@ -153,7 +153,7 @@
 .header {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 16px;
   padding: 0 24px;
   height: 52px;
   background: var(--surface);
@@ -167,49 +167,10 @@
   letter-spacing: 0.08em;
   color: var(--yellow);
   white-space: nowrap;
-}
-
-.tabs {
-  display: flex;
-  align-items: stretch;
-  height: 100%;
-  gap: 0;
-  flex: 1;
-}
-
-.tab {
-  font-family: var(--font-display);
-  font-size: 15px;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  padding: 0 20px;
-  height: 100%;
-  position: relative;
-  transition: color var(--transition);
-}
-
-.tab::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--yellow);
-  transform: scaleX(0);
-  transition: transform var(--transition);
-}
-
-.tab:hover {
-  color: var(--white);
-}
-
-.tab.active {
-  color: var(--white);
-}
-
-.tab.active::after {
-  transform: scaleX(1);
+  background: none;
+  border: none;
+  cursor: default;
+  padding: 0;
 }
 
 /* ─── User area ──────────────────────────────────────────────────────────────── */
@@ -227,29 +188,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.eventCodeBadge {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.2;
-}
-
-.eventCodeLabel {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-
-.eventCodeValue {
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--yellow);
-  letter-spacing: 0.08em;
 }
 
 .logoutBtn {
@@ -276,44 +214,16 @@
 /* ─── Responsive Mobile ───────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .header {
-    height: auto;
-    flex-wrap: wrap;
-    align-items: center;
-    padding: 8px 16px 0;
-    gap: 0;
+    padding: 0 16px;
+    height: 48px;
   }
 
   .logo {
-    font-size: 19px;
-    flex: 1;
-    padding-bottom: 8px;
-  }
-
-  .userArea {
-    margin-left: 0;
-    padding-bottom: 8px;
+    font-size: 18px;
   }
 
   .userEmail {
     display: none;
-  }
-
-  .eventCodeValue {
-    font-size: 12px;
-  }
-
-  .tabs {
-    width: 100%;
-    border-top: 1px solid #1e1e1e;
-    height: 40px;
-  }
-
-  .tab {
-    flex: 1;
-    font-size: 12px;
-    padding: 0 4px;
-    letter-spacing: 0.04em;
-    text-align: center;
   }
 
   .loginTitle {
