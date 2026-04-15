@@ -15,21 +15,50 @@ const GOOGLE_ICON = (
 )
 
 function LoginScreen({ onSignIn }) {
+  const [codigoInvitado, setCodigoInvitado] = useState('')
+
+  function handleInvitado() {
+    const codigo = codigoInvitado.trim().toUpperCase()
+    if (!codigo) return
+    window.location.href = `https://bingo-boda.vercel.app/${codigo}`
+  }
+
   return (
     <div className={styles.loginScreen}>
       <div className={styles.loginCard}>
         <h1 className={styles.loginTitle}>Bingo Musical</h1>
-        <p className={styles.loginSubtitle}>¿Cómo querés ingresar?</p>
-        <div className={styles.loginOptions}>
+
+        <div className={styles.loginSection}>
+          <p className={styles.loginSectionLabel}>Soy organizador</p>
           <button className={styles.loginBtn} onClick={onSignIn}>
             {GOOGLE_ICON}
-            Soy organizador
+            Iniciar sesión con Google
           </button>
+        </div>
+
+        <div className={styles.loginDivider}>
+          <span>o</span>
+        </div>
+
+        <div className={styles.loginSection}>
+          <p className={styles.loginSectionLabel}>Soy invitado</p>
+          <input
+            className={styles.loginInput}
+            type="text"
+            placeholder="Ingresar código del evento..."
+            value={codigoInvitado}
+            onChange={(e) => setCodigoInvitado(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleInvitado()}
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+          />
           <button
             className={styles.loginBtnGuest}
-            onClick={() => window.location.href = 'https://bingo-boda.vercel.app/'}
+            onClick={handleInvitado}
+            disabled={!codigoInvitado.trim()}
           >
-            Soy invitado
+            Ingresar al evento →
           </button>
         </div>
       </div>

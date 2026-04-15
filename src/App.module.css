@@ -34,11 +34,62 @@
   margin: 0;
 }
 
-.loginOptions {
+.loginSection {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  width: 280px;
+}
+
+.loginSectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.loginDivider {
+  display: flex;
+  align-items: center;
+  width: 280px;
   gap: 12px;
-  width: 260px;
+  color: #333;
+  font-size: 12px;
+}
+
+.loginDivider::before,
+.loginDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #2a2a2a;
+}
+
+.loginInput {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: var(--white);
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.08em;
+  outline: none;
+  transition: border-color var(--transition);
+  box-sizing: border-box;
+}
+
+.loginInput::placeholder {
+  color: #444;
+  font-family: var(--font-body);
+  letter-spacing: 0;
+}
+
+.loginInput:focus {
+  border-color: var(--yellow);
 }
 
 .loginBtn {
@@ -80,8 +131,13 @@
   width: 100%;
 }
 
-.loginBtnGuest:hover {
+.loginBtnGuest:hover:not(:disabled) {
   opacity: 0.85;
+}
+
+.loginBtnGuest:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .loadingScreen {
