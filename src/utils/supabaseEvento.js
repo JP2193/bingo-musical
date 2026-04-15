@@ -6,7 +6,7 @@ async function getUserId() {
   return user.id
 }
 
-function normalizarStr(str = '') {
+export function normalizarStr(str = '') {
   return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
 }
 
@@ -335,16 +335,16 @@ export async function toggleOcultoInvitado(id, oculto) {
   if (error) throw error
 }
 
-// ─── Ranking ──────────────────────────────────────────────────────────────────
+// ─── Ranking / Simulación ─────────────────────────────────────────────────────
 
-export async function getRankingCartones(playlistId) {
+async function fetchDatosCartones(playlistId, filtroColumna) {
   const [{ data: cantadas, error: e1 }, { data: invitados, error: e2 }] = await Promise.all([
     supabase.from('canciones_cantadas').select('track_id').eq('playlist_id', playlistId),
     supabase
       .from('invitados')
       .select('nombre, apellido, cartones(numero, track_ids)')
       .eq('playlist_id', playlistId)
-      .not('asignado_at', 'is', null),
+      .not(filtroColumna, 'is', null),
   ])
   if (e1) throw e1
   if (e2) throw e2
@@ -365,34 +365,12 @@ export async function getRankingCartones(playlistId) {
     .sort((a, b) => b.tachadas - a.tachadas)
 }
 
-// ─── Simulación ───────────────────────────────────────────────────────────────
-// Igual que ranking pero incluye todos los invitados con cartón asignado
-// sin importar si abrieron sesión (asignado_at).
+// Solo invitados que abrieron sesión
+export async function getRankingCartones(playlistId) {
+  return fetchDatosCartones(playlistId, 'asignado_at')
+}
 
+// Todos los invitados con cartón asignado (sin importar si abrieron sesión)
 export async function getSimulacionData(playlistId) {
-  const [{ data: cantadas, error: e1 }, { data: invitados, error: e2 }] = await Promise.all([
-    supabase.from('canciones_cantadas').select('track_id').eq('playlist_id', playlistId),
-    supabase
-      .from('invitados')
-      .select('nombre, apellido, cartones(numero, track_ids)')
-      .eq('playlist_id', playlistId)
-      .not('carton_id', 'is', null),
-  ])
-  if (e1) throw e1
-  if (e2) throw e2
-
-  const cantadasSet = new Set(cantadas.map((c) => c.track_id))
-  return invitados
-    .filter((inv) => inv.cartones?.track_ids)
-    .map((inv) => {
-      const tachadas = inv.cartones.track_ids.filter((id) => cantadasSet.has(id)).length
-      return {
-        numero: inv.cartones.numero,
-        nombre: `${inv.nombre} ${inv.apellido}`,
-        tachadas,
-        total: inv.cartones.track_ids.length,
-        pct: Math.round((tachadas / inv.cartones.track_ids.length) * 100),
-      }
-    })
-    .sort((a, b) => b.tachadas - a.tachadas)
+  return fetchDatosCartones(playlistId, 'carton_id')
 }

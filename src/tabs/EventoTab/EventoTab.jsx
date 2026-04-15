@@ -27,6 +27,7 @@ import {
   actualizarNombreInvitado,
   desasignarCartones,
   getCartonesTrackIds,
+  normalizarStr,
 } from '../../utils/supabaseEvento'
 import styles from './EventoTab.module.css'
 
@@ -49,10 +50,6 @@ function parsearLista(texto) {
       if (['nombre', 'name', 'apellido', 'lastname'].includes(n)) return false
       return inv.nombre
     })
-}
-
-function normalizarStr(str = '') {
-  return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
 }
 
 function Stepper({ value, onChange, min = 1, max, label }) {
