@@ -18,7 +18,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32px;
+  gap: 24px;
 }
 
 .loginTitle {
@@ -28,11 +28,25 @@
   color: var(--yellow);
 }
 
+.loginSubtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.loginOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 260px;
+}
+
 .loginBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  padding: 12px 24px;
+  padding: 13px 24px;
   background: var(--surface);
   border: 1px solid #333;
   border-radius: 4px;
@@ -41,11 +55,33 @@
   font-family: var(--font-body);
   cursor: pointer;
   transition: border-color var(--transition), background var(--transition);
+  width: 100%;
 }
 
 .loginBtn:hover {
   border-color: var(--yellow);
   background: var(--surface2);
+}
+
+.loginBtnGuest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 24px;
+  background: var(--yellow);
+  border: 1px solid var(--yellow);
+  border-radius: 4px;
+  color: #000;
+  font-size: 15px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition);
+  width: 100%;
+}
+
+.loginBtnGuest:hover {
+  opacity: 0.85;
 }
 
 .loadingScreen {
