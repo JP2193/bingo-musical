@@ -26,6 +26,29 @@ export async function getPlaylists() {
 
 // ─── Config: playlist activa ──────────────────────────────────────────────────
 
+export async function getNombreEvento() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return ''
+  const { data } = await supabase
+    .from('config')
+    .select('value')
+    .eq('user_id', user.id)
+    .eq('key', 'nombre_evento')
+    .maybeSingle()
+  return data?.value ?? ''
+}
+
+export async function setNombreEvento(nombre) {
+  const userId = await getUserId()
+  const { error } = await supabase
+    .from('config')
+    .upsert(
+      { user_id: userId, key: 'nombre_evento', value: nombre, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,key' }
+    )
+  if (error) throw error
+}
+
 export async function getPlaylistActiva() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return ''

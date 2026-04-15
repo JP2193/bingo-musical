@@ -28,6 +28,8 @@ import {
   desasignarCartones,
   getCartonesTrackIds,
   normalizarStr,
+  getNombreEvento,
+  setNombreEvento,
 } from '../../utils/supabaseEvento'
 import styles from './EventoTab.module.css'
 
@@ -90,6 +92,9 @@ const SUB_TABS = ['Canciones', 'Ranking', 'Cartones', 'Invitados', 'Simulación'
 
 export function EventoTab() {
   // ── Playlists ──────────────────────────────────────────────────────────────
+  const [nombreEvento, setNombreEventoState] = useState('')
+  const [savingNombre, setSavingNombre] = useState(false)
+
   const [playlists, setPlaylists] = useState([])
   const [playlistActivaId, setPlaylistActivaId] = useState('')
   const [settingActiva, setSettingActiva] = useState(false)
@@ -160,10 +165,11 @@ export function EventoTab() {
 
   // ── Init ───────────────────────────────────────────────────────────────────
   useEffect(() => {
-    Promise.all([getPlaylists(), getPlaylistActiva()])
-      .then(([pls, activa]) => {
+    Promise.all([getPlaylists(), getPlaylistActiva(), getNombreEvento()])
+      .then(([pls, activa, nombre]) => {
         setPlaylists(pls)
         setPlaylistActivaId(activa)
+        setNombreEventoState(nombre)
       })
       .catch(() => {})
   }, [])
@@ -191,6 +197,19 @@ export function EventoTab() {
     if (subTab !== 'Ranking') clearInterval(rankingIntervalRef.current)
     if (subTab !== 'Simulación') clearInterval(simIntervalRef.current)
   }, [subTab, playlistActivaId])
+
+  // ─── Nombre del evento ──────────────────────────────────────────────────────
+
+  async function handleGuardarNombre(valor) {
+    setSavingNombre(true)
+    try {
+      await setNombreEvento(valor.trim())
+    } catch {
+      // silencioso — no es crítico
+    } finally {
+      setSavingNombre(false)
+    }
+  }
 
   // ─── Playlist activa ────────────────────────────────────────────────────────
 
@@ -601,6 +620,20 @@ export function EventoTab() {
           <button style={{ marginLeft: 10, color: 'var(--muted)' }} onClick={() => setError('')}>✕</button>
         </div>
       )}
+
+      {/* ── Nombre del evento ── */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Nombre del Evento</h2>
+        <input
+          className={styles.buscadorInv}
+          type="text"
+          placeholder="Ej: Boda Juan y Carla"
+          value={nombreEvento}
+          onChange={(e) => setNombreEventoState(e.target.value)}
+          onBlur={(e) => handleGuardarNombre(e.target.value)}
+        />
+        {savingNombre && <p className={styles.hint}>Guardando...</p>}
+      </section>
 
       {/* ── Playlist activa ── */}
       <section className={styles.section}>
