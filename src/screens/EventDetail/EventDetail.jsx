@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { printCartones } from '../../utils/printCartones'
+import { TEMPLATES, printCartonesEstilizadoPDF, printCartonesEstilizadoPNG } from '../../utils/printCartonesEstilizado'
 
 import {
   getPlaylists,
@@ -146,6 +147,18 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [loadingDeleteBatch, setLoadingDeleteBatch] = useState(false)
   const [confirmEliminarId, setConfirmEliminarId] = useState(null)
+
+  // ── Print prefs ─────────────────────────────────────────────────────────────
+  const defaultPrintPrefs = { activado: false, template: 'wedding', orientacion: 'portrait', formato: 'pdf-a3' }
+  const [printPrefs, setPrintPrefs] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`bingo-print-${eventoId}`)
+      return saved ? JSON.parse(saved) : defaultPrintPrefs
+    } catch { return defaultPrintPrefs }
+  })
+  const [printPrefsGuardadas, setPrintPrefsGuardadas] = useState(false)
+  const [generandoPNG, setGenerandoPNG] = useState(false)
+  const [progresoPNG, setProgresoPNG] = useState('')
 
   // ── Simulación ─────────────────────────────────────────────────────────────
   const [simActivada, setSimActivada] = useState(false)
@@ -518,7 +531,17 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
     }
   }
 
+  function handleSavePrintPrefs() {
+    localStorage.setItem(`bingo-print-${eventoId}`, JSON.stringify(printPrefs))
+    setPrintPrefsGuardadas(true)
+    setTimeout(() => setPrintPrefsGuardadas(false), 3000)
+  }
+
   async function handlePrintSelected() {
+    if (!printPrefs.activado) {
+      setError('Activá el cartón físico en la solapa Cartones para imprimir con diseño.')
+      return
+    }
     const ids = [...selectedInvitados]
     const withCarton = invitados.filter((inv) => ids.includes(inv.id) && inv.carton_id)
     if (withCarton.length === 0) { setError('Los invitados seleccionados no tienen cartón asignado.'); return }
@@ -533,8 +556,23 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
           .filter(Boolean)
         return { numero: c.numero, nombre: inv.nombre, apellido: inv.apellido, tracks: trackObjs }
       }).filter(Boolean)
-      printCartones(cartones, columnas, filas)
+
+      if (printPrefs.formato === 'png') {
+        setGenerandoPNG(true)
+        setProgresoPNG(`Generando PNGs...`)
+        await printCartonesEstilizadoPNG(
+          cartones, columnas, filas, printPrefs,
+          evento?.nombre ?? '', eventoId,
+          (i, total) => setProgresoPNG(`Generando PNG ${i}/${total}...`)
+        )
+        setProgresoPNG('')
+        setGenerandoPNG(false)
+      } else {
+        printCartonesEstilizadoPDF(cartones, columnas, filas, printPrefs, evento?.nombre ?? '', eventoId)
+      }
     } catch (e) {
+      setGenerandoPNG(false)
+      setProgresoPNG('')
       setError(e.message)
     }
   }
@@ -896,6 +934,89 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
           </button>
         </div>
 
+        {/* ── Configuración de cartón físico ── */}
+        <section className={styles.printConfigSection}>
+          <h3 className={styles.printConfigTitle}>Cartón físico</h3>
+          <div className={styles.printToggleRow}>
+            <button
+              className={`${styles.printToggleBtn} ${!printPrefs.activado ? styles.printToggleBtnActive : ''}`}
+              onClick={() => setPrintPrefs((p) => ({ ...p, activado: false }))}
+            >No</button>
+            <button
+              className={`${styles.printToggleBtn} ${printPrefs.activado ? styles.printToggleBtnActive : ''}`}
+              onClick={() => setPrintPrefs((p) => ({ ...p, activado: true }))}
+            >Sí</button>
+          </div>
+
+          {printPrefs.activado && (
+            <div className={styles.printOptions}>
+              <div className={styles.printOptionRow}>
+                <span className={styles.printOptionLabel}>Diseño</span>
+                <select
+                  className={styles.select}
+                  value={printPrefs.template}
+                  onChange={(e) => setPrintPrefs((p) => ({ ...p, template: e.target.value }))}
+                >
+                  {Object.entries(TEMPLATES).map(([key, t]) => (
+                    <option key={key} value={key}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.printOptionRow}>
+                <span className={styles.printOptionLabel}>Orientación</span>
+                <div className={styles.printRadioGroup}>
+                  {['portrait', 'landscape'].map((o) => (
+                    <label key={o} className={styles.printRadioLabel}>
+                      <input
+                        type="radio"
+                        name="orientacion"
+                        value={o}
+                        checked={printPrefs.orientacion === o}
+                        onChange={() => setPrintPrefs((p) => ({ ...p, orientacion: o }))}
+                      />
+                      {o === 'portrait' ? 'Portrait' : 'Landscape'}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.printOptionRow}>
+                <span className={styles.printOptionLabel}>Formato</span>
+                <div className={styles.printRadioGroup}>
+                  <label className={styles.printRadioLabel}>
+                    <input
+                      type="radio"
+                      name="formato"
+                      value="pdf-a3"
+                      checked={printPrefs.formato === 'pdf-a3'}
+                      onChange={() => setPrintPrefs((p) => ({ ...p, formato: 'pdf-a3' }))}
+                    />
+                    PDF A3 (4 por hoja)
+                  </label>
+                  <label className={styles.printRadioLabel}>
+                    <input
+                      type="radio"
+                      name="formato"
+                      value="png"
+                      checked={printPrefs.formato === 'png'}
+                      onChange={() => setPrintPrefs((p) => ({ ...p, formato: 'png' }))}
+                    />
+                    PNG por cartón
+                  </label>
+                </div>
+              </div>
+
+              <div className={styles.printSaveRow}>
+                <button className={styles.secondaryBtn} onClick={handleSavePrintPrefs}>
+                  Guardar preferencias
+                </button>
+                {printPrefsGuardadas && <span className={styles.printSavedMsg}>✓ Guardado</span>}
+              </div>
+            </div>
+          )}
+        </section>
+
         {!estadoCartones ? (
           <p className={styles.hint}>Sin datos.</p>
         ) : (
@@ -1042,8 +1163,8 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
           <div className={styles.selectionBar}>
             <div className={styles.selectionGroup}>
               <span className={styles.selectionCount}>{selectedInvitados.size} seleccionados</span>
-              <button className={styles.printBtn} onClick={handlePrintSelected}>
-                Imprimir selección
+              <button className={styles.printBtn} onClick={handlePrintSelected} disabled={generandoPNG}>
+                {generandoPNG ? progresoPNG || 'Generando...' : 'Imprimir selección'}
               </button>
             </div>
             <div className={styles.selectionDivider} />
