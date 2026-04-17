@@ -16,7 +16,7 @@ export const TEMPLATES = {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 0.8px solid #f5c6e8;
+    border: 1px solid #c8608a;
     border-radius: 0;
     position: relative;
     -webkit-print-color-adjust: exact;
@@ -39,7 +39,7 @@ export const TEMPLATES = {
     font-family: 'Pacifico', cursive;
     font-size: 24pt;
     font-weight: 400;
-    color: #e63f8e;
+    color: #d43080;
     letter-spacing: 1px;
     line-height: 1;
   }
@@ -55,7 +55,7 @@ export const TEMPLATES = {
   .cp-numero {
     font-family: 'Nunito', sans-serif;
     font-size: 5.5pt;
-    color: #f5c6e8;
+    color: #c07898;
     letter-spacing: 1px;
     margin-top: 1mm;
   }
@@ -65,7 +65,7 @@ export const TEMPLATES = {
     left: 4mm;
     font-family: 'Nunito', sans-serif;
     font-size: 6pt;
-    color: #c47faa;
+    color: #b06888;
     letter-spacing: 0.5px;
   }
   .cp-sep {
@@ -78,13 +78,12 @@ export const TEMPLATES = {
   .cp-sep-linea {
     flex: 1;
     height: 0.5px;
-    background: #e63f8e;
-    opacity: 0.4;
+    background: #d43080;
+    opacity: 0.5;
   }
   .cp-sep-icono {
-    color: #e63f8e;
+    color: #d43080;
     font-size: 7pt;
-    opacity: 0.7;
   }
   .cp-grid {
     flex: 1;
@@ -101,7 +100,7 @@ export const TEMPLATES = {
   .cp-carton:not(.cp-carton--vertical) .cp-evento { font-size: 11pt; }
   .cp-carton:not(.cp-carton--vertical) .cp-numero { font-size: 6.5pt; }
   .cp-celda {
-    border: 1px solid #f5c6e8;
+    border: 1px solid #e0a8c8;
     border-radius: 6px;
     display: flex;
     flex-direction: column;
@@ -121,7 +120,7 @@ export const TEMPLATES = {
   .cp-artista {
     font-family: 'Nunito', sans-serif;
     font-weight: 300;
-    color: #c47faa;
+    color: #a85888;
     line-height: 1.2;
   }`,
   },
@@ -130,15 +129,15 @@ export const TEMPLATES = {
     label: 'Azul noche',
     fontUrl: 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,600&family=Outfit:wght@300;400;600&display=swap',
     titulo: '♪ Bingo Musical ♪',
-    sepIcono: null, // uses ::before on .cp-sep-icono (diamond shape via CSS)
+    sepIcono: '◆',
     css: `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   .cp-carton {
-    background: #f4f6fb;
+    background: #edf1f8;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid #c8d4e8;
+    border: 1px solid #4a70b0;
     border-radius: 0;
     position: relative;
     -webkit-print-color-adjust: exact;
@@ -148,8 +147,8 @@ export const TEMPLATES = {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #1d3461 0%, #3a6bc4 50%, #1d3461 100%);
+    height: 4px;
+    background: #1d3461;
   }
   .cp-content {
     flex: 1;
@@ -176,17 +175,17 @@ export const TEMPLATES = {
   .cp-evento {
     font-family: 'Outfit', sans-serif;
     font-size: 9pt;
-    color: #3a6bc4;
+    color: #2a5090;
     letter-spacing: 2.5px;
     margin-top: 2mm;
     margin-bottom: 1mm;
-    font-weight: 300;
+    font-weight: 400;
     text-transform: uppercase;
   }
   .cp-numero {
     font-family: 'Outfit', sans-serif;
     font-size: 5.5pt;
-    color: #a8bed8;
+    color: #6080a8;
     letter-spacing: 1.5px;
     margin-top: 1mm;
     text-transform: uppercase;
@@ -197,7 +196,7 @@ export const TEMPLATES = {
     left: 4mm;
     font-family: 'Outfit', sans-serif;
     font-size: 6pt;
-    color: #a8bed8;
+    color: #6080a8;
     letter-spacing: 0.5px;
   }
   .cp-sep {
@@ -210,16 +209,13 @@ export const TEMPLATES = {
   .cp-sep-linea {
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, transparent, #3a6bc4 40%, #3a6bc4 60%, transparent);
-    opacity: 0.25;
+    background: #3a6bc4;
+    opacity: 0.4;
   }
   .cp-sep-icono {
-    width: 6px;
-    height: 6px;
-    background: #3a6bc4;
-    opacity: 0.35;
-    transform: rotate(45deg);
-    flex-shrink: 0;
+    color: #2a5090;
+    font-size: 7pt;
+    opacity: 0.6;
   }
   .cp-grid {
     flex: 1;
@@ -236,7 +232,7 @@ export const TEMPLATES = {
   .cp-carton:not(.cp-carton--vertical) .cp-evento { font-size: 11pt; }
   .cp-carton:not(.cp-carton--vertical) .cp-numero { font-size: 6.5pt; }
   .cp-celda {
-    border: 1px solid #dae3f0;
+    border: 1px solid #a8c0e0;
     border-radius: 4px;
     display: flex;
     flex-direction: column;
@@ -244,7 +240,7 @@ export const TEMPLATES = {
     justify-content: center;
     text-align: center;
     padding: 1mm 1.5mm;
-    background: linear-gradient(160deg, #ffffff 60%, #eef3fb 100%);
+    background: white;
   }
   .cp-nombre {
     font-family: 'Outfit', sans-serif;
@@ -256,7 +252,7 @@ export const TEMPLATES = {
   .cp-artista {
     font-family: 'Outfit', sans-serif;
     font-weight: 300;
-    color: #5b84c0;
+    color: #3a6090;
     line-height: 1.2;
   }`,
   },
@@ -269,11 +265,11 @@ export const TEMPLATES = {
     css: `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   .cp-carton {
-    background: #f8f8f6;
+    background: #f5f5f5;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 0.8px solid #d0cfc8;
+    border: 1px solid #555;
     border-radius: 0;
     position: relative;
     -webkit-print-color-adjust: exact;
@@ -296,7 +292,7 @@ export const TEMPLATES = {
     font-family: 'DM Serif Display', serif;
     font-size: 24pt;
     font-weight: 400;
-    color: #1a1a2e;
+    color: #111;
     letter-spacing: 3px;
     line-height: 1;
     text-transform: uppercase;
@@ -304,7 +300,7 @@ export const TEMPLATES = {
   .cp-evento {
     font-family: 'DM Sans', sans-serif;
     font-size: 9pt;
-    color: #4a4a5a;
+    color: #333;
     letter-spacing: 2px;
     margin-top: 2mm;
     margin-bottom: 1mm;
@@ -314,7 +310,7 @@ export const TEMPLATES = {
   .cp-numero {
     font-family: 'DM Sans', sans-serif;
     font-size: 5.5pt;
-    color: #b0afaa;
+    color: #777;
     letter-spacing: 1.5px;
     margin-top: 1mm;
     text-transform: uppercase;
@@ -325,7 +321,7 @@ export const TEMPLATES = {
     left: 4mm;
     font-family: 'DM Sans', sans-serif;
     font-size: 6pt;
-    color: #8a8a96;
+    color: #777;
     letter-spacing: 0.5px;
   }
   .cp-sep {
@@ -338,13 +334,13 @@ export const TEMPLATES = {
   .cp-sep-linea {
     flex: 1;
     height: 0.5px;
-    background: #1a1a2e;
-    opacity: 0.25;
+    background: #333;
+    opacity: 0.4;
   }
   .cp-sep-icono {
-    color: #1a1a2e;
+    color: #333;
     font-size: 7pt;
-    opacity: 0.4;
+    opacity: 0.6;
     font-family: 'DM Sans', sans-serif;
     letter-spacing: 2px;
   }
@@ -363,7 +359,7 @@ export const TEMPLATES = {
   .cp-carton:not(.cp-carton--vertical) .cp-evento { font-size: 11pt; }
   .cp-carton:not(.cp-carton--vertical) .cp-numero { font-size: 6.5pt; }
   .cp-celda {
-    border: 1px solid #d0cfc8;
+    border: 1px solid #bbb;
     border-radius: 0;
     display: flex;
     flex-direction: column;
@@ -376,14 +372,14 @@ export const TEMPLATES = {
   .cp-nombre {
     font-family: 'DM Sans', sans-serif;
     font-weight: 600;
-    color: #1a1a2e;
+    color: #111;
     line-height: 1.25;
     margin-bottom: 2px;
   }
   .cp-artista {
     font-family: 'DM Sans', sans-serif;
     font-weight: 300;
-    color: #6a6a7a;
+    color: #444;
     line-height: 1.2;
   }`,
   },
@@ -400,8 +396,8 @@ export const TEMPLATES = {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: none;
-    border-radius: 16px;
+    border: 1px solid #b06828;
+    border-radius: 4px;
     position: relative;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -423,7 +419,7 @@ export const TEMPLATES = {
     font-family: 'Unbounded', sans-serif;
     font-size: 20pt;
     font-weight: 900;
-    color: #3daa72;
+    color: #258a50;
     letter-spacing: -0.5px;
     line-height: 1;
     text-transform: uppercase;
@@ -431,7 +427,7 @@ export const TEMPLATES = {
   .cp-evento {
     font-family: 'Nunito', sans-serif;
     font-size: 9pt;
-    color: #e07c2a;
+    color: #c06018;
     letter-spacing: 0.5px;
     margin-top: 2mm;
     margin-bottom: 1mm;
@@ -441,7 +437,7 @@ export const TEMPLATES = {
   .cp-numero {
     font-family: 'Nunito', sans-serif;
     font-size: 5.5pt;
-    color: #c8b898;
+    color: #906840;
     letter-spacing: 1px;
     margin-top: 1mm;
   }
@@ -451,7 +447,7 @@ export const TEMPLATES = {
     left: 4mm;
     font-family: 'Nunito', sans-serif;
     font-size: 6pt;
-    color: #c8b898;
+    color: #906840;
     letter-spacing: 0.5px;
   }
   .cp-sep {
@@ -464,12 +460,12 @@ export const TEMPLATES = {
   .cp-sep-linea {
     flex: 1;
     height: 1.5px;
-    background: #e8c07a;
-    opacity: 0.6;
+    background: #c08030;
+    opacity: 0.7;
     border-radius: 2px;
   }
   .cp-sep-icono {
-    color: #e07c2a;
+    color: #c06018;
     font-size: 9pt;
     line-height: 1;
   }
@@ -488,8 +484,8 @@ export const TEMPLATES = {
   .cp-carton:not(.cp-carton--vertical) .cp-evento { font-size: 11pt; }
   .cp-carton:not(.cp-carton--vertical) .cp-numero { font-size: 6.5pt; }
   .cp-celda {
-    border: none;
-    border-radius: 10px;
+    border: 1px solid #c08030;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -508,7 +504,7 @@ export const TEMPLATES = {
   .cp-artista {
     font-family: 'Nunito', sans-serif;
     font-weight: 400;
-    color: #7a5030;
+    color: #6a3a10;
     line-height: 1.2;
   }`,
   },
@@ -525,7 +521,7 @@ export const TEMPLATES = {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 0.8px solid #ede4ce;
+    border: 1px solid #a08050;
     border-radius: 0;
     position: relative;
     -webkit-print-color-adjust: exact;
@@ -549,14 +545,14 @@ export const TEMPLATES = {
     font-size: 24pt;
     font-weight: 600;
     font-style: italic;
-    color: #b8935a;
+    color: #8a6830;
     letter-spacing: 2px;
     line-height: 1;
   }
   .cp-evento {
     font-family: 'Jost', sans-serif;
     font-size: 9pt;
-    color: #6b5040;
+    color: #5a3e2e;
     letter-spacing: 0.5px;
     margin-top: 2mm;
     margin-bottom: 1mm;
@@ -565,7 +561,7 @@ export const TEMPLATES = {
   .cp-numero {
     font-family: 'Jost', sans-serif;
     font-size: 5.5pt;
-    color: #ddd0bc;
+    color: #9a7850;
     letter-spacing: 1px;
     margin-top: 1mm;
   }
@@ -575,7 +571,7 @@ export const TEMPLATES = {
     left: 4mm;
     font-family: 'Jost', sans-serif;
     font-size: 6pt;
-    color: #a8917a;
+    color: #8a6848;
     letter-spacing: 0.5px;
   }
   .cp-sep {
@@ -588,13 +584,13 @@ export const TEMPLATES = {
   .cp-sep-linea {
     flex: 1;
     height: 0.5px;
-    background: #b8935a;
-    opacity: 0.4;
+    background: #8a6830;
+    opacity: 0.5;
   }
   .cp-sep-icono {
-    color: #b8935a;
+    color: #8a6830;
     font-size: 7pt;
-    opacity: 0.7;
+    opacity: 0.8;
   }
   .cp-grid {
     flex: 1;
@@ -611,7 +607,7 @@ export const TEMPLATES = {
   .cp-carton:not(.cp-carton--vertical) .cp-evento { font-size: 11pt; }
   .cp-carton:not(.cp-carton--vertical) .cp-numero { font-size: 6.5pt; }
   .cp-celda {
-    border: 1px solid #ecdec4;
+    border: 1px solid #b89060;
     border-radius: 6px;
     display: flex;
     flex-direction: column;
@@ -624,14 +620,14 @@ export const TEMPLATES = {
   .cp-nombre {
     font-family: 'Jost', sans-serif;
     font-weight: 600;
-    color: #6b5040;
+    color: #4a3020;
     line-height: 1.25;
     margin-bottom: 2px;
   }
   .cp-artista {
     font-family: 'Jost', sans-serif;
     font-weight: 300;
-    color: #a8917a;
+    color: #7a5838;
     line-height: 1.2;
   }`,
   },
