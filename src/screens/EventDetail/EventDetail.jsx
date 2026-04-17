@@ -690,6 +690,7 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
               className={styles.select}
               value={evento?.playlist_id ?? ''}
               onChange={(e) => handleSetPlaylist(e.target.value)}
+              disabled={tieneCartones}
             >
               <option value="">Seleccionar playlist...</option>
               {playlists.map((p) => (
@@ -698,6 +699,9 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
             </select>
             {playlistActiva && (
               <p className={styles.hint}>{playlistActiva.tracks?.length ?? 0} canciones disponibles</p>
+            )}
+            {tieneCartones && (
+              <p className={styles.hint}>Playlist fija — los cartones ya fueron generados. Para cambiarla, creá un nuevo evento.</p>
             )}
             <button className={styles.nuevaPlaylistBtn} onClick={onGestionarPlaylists}>
               + Crear nueva playlist →
