@@ -1,4 +1,5 @@
 import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 
 // ─── Templates ────────────────────────────────────────────────────────────────
 
@@ -683,10 +684,6 @@ function buildCartonInner(carton, cols, rows, tmpl, isVertical, eventoNombre, ev
       <div class="cp-artista">${esc(t.artist)}</div>
     </div>`).join('')
 
-  const sepIcono = tmpl.sepIcono != null
-    ? `<div class="cp-sep-icono">${tmpl.sepIcono}</div>`
-    : `<div class="cp-sep-icono"></div>`
-
   return `
   <div class="cp-carton${vertClass}" style="width:${w};height:${h};">
     <div class="cp-content">
@@ -694,12 +691,7 @@ function buildCartonInner(carton, cols, rows, tmpl, isVertical, eventoNombre, ev
       <div class="cp-header">
         <div class="cp-titulo">${tmpl.titulo}</div>
         <div class="cp-evento">${esc(eventoNombre)}</div>
-        <div class="cp-numero">Cartón #${String(carton.numero).padStart(3, '0')} · ${esc(carton.nombre)} ${esc(carton.apellido)}</div>
-      </div>
-      <div class="cp-sep">
-        <div class="cp-sep-linea"></div>
-        ${sepIcono}
-        <div class="cp-sep-linea"></div>
+        <div class="cp-numero">Cartón #${String(carton.numero).padStart(3, '0')}</div>
       </div>
       <div class="cp-grid" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr);">
         ${celdas}
@@ -708,68 +700,86 @@ function buildCartonInner(carton, cols, rows, tmpl, isVertical, eventoNombre, ev
   </div>`
 }
 
-// ─── PDF A3 (ventana de impresión) ────────────────────────────────────────────
+// ─── PDF A3 (descarga directa con jsPDF + html2canvas) ───────────────────────
 
-export function printCartonesEstilizadoPDF(cartones, cols, rows, prefs, eventoNombre, eventoId) {
+export async function printCartonesEstilizadoPDF(cartones, cols, rows, prefs, eventoNombre, eventoId, onProgreso) {
   const tmpl = TEMPLATES[prefs.template]
   const isVertical = prefs.orientacion === 'portrait'
 
-  // A3: 420×297mm landscape · 297×420mm portrait
-  // Cada cartón A5: landscape 210×148mm · portrait 148×210mm
-  // 4 cartones en A3 = 2 cols × 2 rows, encaja perfectamente
-  const pageW = isVertical ? '297mm' : '420mm'
-  const pageH = isVertical ? '420mm' : '297mm'
-  const a3Size = isVertical ? 'A3' : 'A3 landscape'
+  // A3: portrait 297×420mm · landscape 420×297mm
+  // Cartón A5: portrait 148×210mm · landscape 210×148mm → 4 cartones encajan exactamente
+  const cardW = isVertical ? 148 : 210
+  const cardH = isVertical ? 210 : 148
 
-  const pages = chunkArray(cartones, 4).map((grupo) => {
-    const cards = grupo.map((c) => buildCartonInner(c, cols, rows, tmpl, isVertical, eventoNombre, eventoId)).join('')
-    return `<div class="page">${cards}</div>`
-  }).join('')
-
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Cartones Bingo Musical</title>
-  <link rel="stylesheet" href="${tmpl.fontUrl}">
-  <style>
-    ${tmpl.css}
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: white; }
-    .page {
-      width: ${pageW};
-      height: ${pageH};
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-    }
-    .page > .cp-carton {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    @media print {
-      body { margin: 0; padding: 0; }
-      .page { page-break-after: always; break-after: page; }
-      .page:last-of-type { page-break-after: avoid; break-after: avoid; }
-      @page { size: ${a3Size}; margin: 0; }
-    }
-  </style>
-</head>
-<body>
-  ${pages}
-  ${AJUSTAR_TEXTO_SCRIPT}
-</body>
-</html>`
-
-  const win = window.open('', '_blank')
-  if (!win) {
-    alert('Habilitá las ventanas emergentes para imprimir los cartones.')
-    return
+  // 1. Cargar fuente en el documento principal
+  const fontLinkId = `_bingo-font-${prefs.template}`
+  if (!document.getElementById(fontLinkId)) {
+    const link = document.createElement('link')
+    link.id = fontLinkId
+    link.rel = 'stylesheet'
+    link.href = tmpl.fontUrl
+    document.head.appendChild(link)
   }
-  win.document.write(html)
-  win.document.close()
-  win.focus()
-  setTimeout(() => win.print(), 600)
+
+  // 2. Agregar CSS del template
+  const styleId = `_bingo-css-${prefs.template}`
+  if (!document.getElementById(styleId)) {
+    const styleEl = document.createElement('style')
+    styleEl.id = styleId
+    styleEl.textContent = tmpl.css
+    document.head.appendChild(styleEl)
+  }
+
+  // 3. Esperar fonts
+  await document.fonts.ready
+
+  // 4. Crear PDF A3
+  const pdf = new jsPDF({
+    orientation: isVertical ? 'portrait' : 'landscape',
+    unit: 'mm',
+    format: 'a3',
+  })
+
+  const pages = chunkArray(cartones, 4)
+  let totalRendered = 0
+
+  for (let pageIdx = 0; pageIdx < pages.length; pageIdx++) {
+    if (pageIdx > 0) pdf.addPage()
+    const grupo = pages[pageIdx]
+
+    for (let i = 0; i < grupo.length; i++) {
+      const c = grupo[i]
+      const col = i % 2
+      const row = Math.floor(i / 2)
+      const x = col * cardW
+      const y = row * cardH
+
+      const inner = buildCartonInner(c, cols, rows, tmpl, isVertical, eventoNombre, eventoId)
+      const wrapper = document.createElement('div')
+      wrapper.style.cssText = 'position:fixed;top:-9999px;left:-9999px;'
+      wrapper.innerHTML = inner
+      document.body.appendChild(wrapper)
+
+      await new Promise((r) => setTimeout(r, 80))
+
+      const canvas = await html2canvas(wrapper.firstElementChild, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: null,
+        logging: false,
+      })
+
+      document.body.removeChild(wrapper)
+
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, cardW, cardH)
+
+      totalRendered++
+      onProgreso?.(totalRendered, cartones.length)
+    }
+  }
+
+  pdf.save('cartones-bingo.pdf')
 }
 
 // ─── PNG individual (html2canvas) ─────────────────────────────────────────────

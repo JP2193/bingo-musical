@@ -557,19 +557,24 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
         return { numero: c.numero, nombre: inv.nombre, apellido: inv.apellido, tracks: trackObjs }
       }).filter(Boolean)
 
+      setGenerandoPNG(true)
       if (printPrefs.formato === 'png') {
-        setGenerandoPNG(true)
-        setProgresoPNG(`Generando PNGs...`)
+        setProgresoPNG('Generando PNGs...')
         await printCartonesEstilizadoPNG(
           cartones, columnas, filas, printPrefs,
           evento?.nombre ?? '', eventoId,
           (i, total) => setProgresoPNG(`Generando PNG ${i}/${total}...`)
         )
-        setProgresoPNG('')
-        setGenerandoPNG(false)
       } else {
-        printCartonesEstilizadoPDF(cartones, columnas, filas, printPrefs, evento?.nombre ?? '', eventoId)
+        setProgresoPNG('Generando PDF...')
+        await printCartonesEstilizadoPDF(
+          cartones, columnas, filas, printPrefs,
+          evento?.nombre ?? '', eventoId,
+          (i, total) => setProgresoPNG(`Generando PDF... ${i}/${cartones.length}`)
+        )
       }
+      setProgresoPNG('')
+      setGenerandoPNG(false)
     } catch (e) {
       setGenerandoPNG(false)
       setProgresoPNG('')
