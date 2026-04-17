@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { printCartones } from '../../utils/printCartones'
-import { TEMPLATES, printCartonesEstilizadoPDF, printCartonesEstilizadoPNG } from '../../utils/printCartonesEstilizado'
+import { TEMPLATES, printCartonesEstilizadoPDF, printCartonesEstilizadoPNG, getEffectiveDimensions } from '../../utils/printCartonesEstilizado'
 
 import {
   getPlaylists,
@@ -970,18 +970,30 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
               <div className={styles.printOptionRow}>
                 <span className={styles.printOptionLabel}>Orientación</span>
                 <div className={styles.printRadioGroup}>
-                  {['portrait', 'landscape'].map((o) => (
-                    <label key={o} className={styles.printRadioLabel}>
-                      <input
-                        type="radio"
-                        name="orientacion"
-                        value={o}
-                        checked={printPrefs.orientacion === o}
-                        onChange={() => setPrintPrefs((p) => ({ ...p, orientacion: o }))}
-                      />
-                      {o === 'portrait' ? 'Portrait' : 'Landscape'}
-                    </label>
-                  ))}
+                  {['portrait', 'landscape'].map((o) => {
+                    const orientacionRecomendada = columnas > filas ? 'landscape' : columnas < filas ? 'portrait' : null
+                    const esRecomendada = orientacionRecomendada === o
+                    const esOpuesta = orientacionRecomendada !== null && orientacionRecomendada !== o
+                    const { effectiveCols, effectiveRows } = getEffectiveDimensions(columnas, filas, o)
+                    return (
+                      <label key={o} className={styles.printRadioLabel}>
+                        <input
+                          type="radio"
+                          name="orientacion"
+                          value={o}
+                          checked={printPrefs.orientacion === o}
+                          onChange={() => setPrintPrefs((p) => ({ ...p, orientacion: o }))}
+                        />
+                        {o === 'portrait' ? 'Portrait' : 'Landscape'}
+                        {esRecomendada && (
+                          <span className={styles.printOrientHint}>← Recomendado para {columnas}×{filas}</span>
+                        )}
+                        {esOpuesta && (
+                          <span className={styles.printOrientMuted}>(grilla se adapta a {effectiveCols}×{effectiveRows})</span>
+                        )}
+                      </label>
+                    )
+                  })}
                 </div>
               </div>
 

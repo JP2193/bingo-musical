@@ -637,6 +637,16 @@ export const TEMPLATES = {
   },
 }
 
+// ─── Dimensiones efectivas ────────────────────────────────────────────────────
+
+export function getEffectiveDimensions(cols, rows, orientacion) {
+  if (orientacion === 'portrait') {
+    return { effectiveCols: Math.min(cols, rows), effectiveRows: Math.max(cols, rows) }
+  } else {
+    return { effectiveCols: Math.max(cols, rows), effectiveRows: Math.min(cols, rows) }
+  }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function esc(str = '') {
@@ -674,11 +684,11 @@ const AJUSTAR_TEXTO_SCRIPT = `
   window.addEventListener('load', ajustarTexto)
 <\/script>`
 
-function buildCartonInner(carton, cols, rows, tmpl, isVertical, eventoNombre, eventoId) {
+function buildCartonInner(carton, effectiveCols, effectiveRows, tmpl, isVertical, eventoNombre, eventoId) {
   const vertClass = isVertical ? ' cp-carton--vertical' : ''
   const w = isVertical ? '148mm' : '210mm'
   const h = isVertical ? '210mm' : '148mm'
-  const celdas = carton.tracks.slice(0, cols * rows).map((t) => `
+  const celdas = carton.tracks.slice(0, effectiveCols * effectiveRows).map((t) => `
     <div class="cp-celda">
       <div class="cp-nombre">${esc(t.name)}</div>
       <div class="cp-artista">${esc(t.artist)}</div>
@@ -693,7 +703,7 @@ function buildCartonInner(carton, cols, rows, tmpl, isVertical, eventoNombre, ev
         <div class="cp-evento">${esc(eventoNombre)}</div>
         <div class="cp-numero">Cartón #${String(carton.numero).padStart(3, '0')}</div>
       </div>
-      <div class="cp-grid" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr);">
+      <div class="cp-grid" style="grid-template-columns:repeat(${effectiveCols},1fr);grid-template-rows:repeat(${effectiveRows},1fr);">
         ${celdas}
       </div>
     </div>
@@ -705,6 +715,7 @@ function buildCartonInner(carton, cols, rows, tmpl, isVertical, eventoNombre, ev
 export async function printCartonesEstilizadoPDF(cartones, cols, rows, prefs, eventoNombre, eventoId, onProgreso) {
   const tmpl = TEMPLATES[prefs.template]
   const isVertical = prefs.orientacion === 'portrait'
+  const { effectiveCols, effectiveRows } = getEffectiveDimensions(cols, rows, prefs.orientacion)
 
   // A3: portrait 297×420mm · landscape 420×297mm
   // Cartón A5: portrait 148×210mm · landscape 210×148mm → 4 cartones encajan exactamente
@@ -754,7 +765,7 @@ export async function printCartonesEstilizadoPDF(cartones, cols, rows, prefs, ev
       const x = col * cardW
       const y = row * cardH
 
-      const inner = buildCartonInner(c, cols, rows, tmpl, isVertical, eventoNombre, eventoId)
+      const inner = buildCartonInner(c, effectiveCols, effectiveRows, tmpl, isVertical, eventoNombre, eventoId)
       const wrapper = document.createElement('div')
       wrapper.style.cssText = 'position:fixed;top:-9999px;left:-9999px;'
       wrapper.innerHTML = inner
@@ -787,6 +798,7 @@ export async function printCartonesEstilizadoPDF(cartones, cols, rows, prefs, ev
 export async function printCartonesEstilizadoPNG(cartones, cols, rows, prefs, eventoNombre, eventoId, onProgreso) {
   const tmpl = TEMPLATES[prefs.template]
   const isVertical = prefs.orientacion === 'portrait'
+  const { effectiveCols, effectiveRows } = getEffectiveDimensions(cols, rows, prefs.orientacion)
 
   // 1. Cargar la fuente en el documento principal (si no está ya)
   const fontLinkId = `_bingo-font-${prefs.template}`
@@ -815,7 +827,7 @@ export async function printCartonesEstilizadoPNG(cartones, cols, rows, prefs, ev
     const c = cartones[i]
     onProgreso?.(i + 1, cartones.length)
 
-    const inner = buildCartonInner(c, cols, rows, tmpl, isVertical, eventoNombre, eventoId)
+    const inner = buildCartonInner(c, effectiveCols, effectiveRows, tmpl, isVertical, eventoNombre, eventoId)
 
     const wrapper = document.createElement('div')
     wrapper.style.cssText = 'position:fixed;top:-9999px;left:-9999px;'
