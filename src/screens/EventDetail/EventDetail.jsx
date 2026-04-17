@@ -941,16 +941,15 @@ export function EventDetail({ eventoId, onVolver, onGestionarPlaylists, onNombre
 
         {/* ── Configuración de cartón físico ── */}
         <section className={styles.printConfigSection}>
-          <h3 className={styles.printConfigTitle}>Cartón físico</h3>
           <div className={styles.printToggleRow}>
+            <h3 className={styles.printConfigTitle}>Cartón físico</h3>
             <button
-              className={`${styles.printToggleBtn} ${!printPrefs.activado ? styles.printToggleBtnActive : ''}`}
-              onClick={() => setPrintPrefs((p) => ({ ...p, activado: false }))}
-            >No</button>
-            <button
-              className={`${styles.printToggleBtn} ${printPrefs.activado ? styles.printToggleBtnActive : ''}`}
-              onClick={() => setPrintPrefs((p) => ({ ...p, activado: true }))}
-            >Sí</button>
+              className={`${styles.toggle} ${printPrefs.activado ? styles.toggleOn : ''}`}
+              onClick={() => setPrintPrefs((p) => ({ ...p, activado: !p.activado }))}
+            >
+              <span className={styles.toggleThumb} />
+            </button>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>{printPrefs.activado ? 'SÍ' : 'NO'}</span>
           </div>
 
           {printPrefs.activado && (
